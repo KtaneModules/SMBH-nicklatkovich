@@ -1,0 +1,188 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1">
+    <title>SMBH — Keep Talking and Nobody Explodes Module</title>
+    <link rel="stylesheet" type="text/css" href="css/font.css" />
+    <link rel="stylesheet" type="text/css" href="css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="css/main.css" />
+    <script src="js/ktane-utils.js"></script>
+    <script src='js/ruleseed.js'></script>
+    <script>
+        const svgNS = "http://www.w3.org/2000/svg";
+        const INTERVAL_SIZE = 25;
+        const TICK_RADIUS = 8;
+        const ROW_ITEMS_COUNT = 4;
+        const alternatives = ["h-r-t", "h-r"];
+
+        function setRules(rnd) {
+            for (var i = rnd.next(0, 10); i > 0; i--) rnd.nextDouble();
+            /** @type {string[]} */
+            const pool = rnd.shuffleArray(["t-t", "h-rh-r", "t-h-r", "h--r", alternatives[rnd.next(0, alternatives.length)], "t--t"]);
+            const c = ["h-rt", "tt", "th-r"][rnd.next(0, 3)];
+            /** @type {string[]} */
+            const bhAB = [...pool.slice(0, 5), ...new Array(7).fill(""), c, ...new Array(23).fill("")];
+            /** @type {{ [size: number]: string[] }} */
+            const variants = {};
+            const addVariant = (code) => {
+                if (variants[code.length]) variants[code.length].push(code);
+                else variants[code.length] = [code];
+            };
+            addVariant("t");
+            addVariant("h-r");
+            addVariant("h--r");
+            let minVariant = 0;
+            const codes = [];
+            while (true) {
+                const vars = variants[minVariant];
+                if (!vars || !vars.length) {
+                    minVariant += 1;
+                    continue;
+                }
+                const variantIndex = rnd.next(0, vars.length);
+                const prevCode = vars[variantIndex];
+                if (prevCode.length > 1 && bhAB.indexOf(prevCode) === -1) codes.push(prevCode);
+                if (codes.length >= bhAB.length - 6) break;
+                vars[variantIndex] = vars[vars.length - 1];
+                vars.pop();
+                const lastTickIndex = prevCode.lastIndexOf("-");
+                addVariant(prevCode + "-t");
+                addVariant(prevCode + "-h-r");
+                addVariant(prevCode + "-h--r");
+                if (prevCode.length - lastTickIndex < 3) {
+                    addVariant(prevCode + "t");
+                    addVariant(prevCode + "h-r");
+                    addVariant(prevCode + "h--r");
+                }
+            }
+            const shuffledCodes = rnd.shuffleArray(codes);
+            for (let i = 0; i < bhAB.length; i++) {
+                if (bhAB[i]) continue;
+                bhAB[i] = shuffledCodes.pop();
+            }
+            const table = document.getElementById("bhAB-table");
+            for (let i = 0; i < Math.ceil(36 / ROW_ITEMS_COUNT); i++) {
+                const tr = table.appendChild(document.createElement("tr"));
+                for (let j = 0; j < ROW_ITEMS_COUNT; j++) {
+                    const index = i * ROW_ITEMS_COUNT + j;
+                    if (index >= bhAB.length) break;
+                    const origin = index < 10 ? index : `${index} (${String.fromCharCode(55 + index)})`;
+                    const code = bhAB[index];
+                    const td = tr.appendChild(document.createElement("td"));
+                    const originDiv = td.appendChild(document.createElement("div"));
+                    originDiv.innerText = origin;
+                    td.appendChild(createCode(code));
+                }
+            }
+        }
+
+        function createCode(code) {
+            const split = code.split("-");
+            const intervals = split.length;
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", ((intervals + 1) * INTERVAL_SIZE).toString(10));
+            svg.setAttribute("height", "32");
+            svg.setAttribute("fill", "none");
+            svg.setAttribute("stroke", "black");
+            svg.setAttribute("stroke-width", "1");
+            svg.setAttribute("stroke-linecap", "round");
+            svg.setAttribute("stroke-linejoin", "round");
+            const path = document.createElementNS(svgNS, "path");
+            let pathCode = "";
+            for (let dotIndex = 0; dotIndex < intervals + 1; dotIndex++) {
+                const center = dotIndex * INTERVAL_SIZE + INTERVAL_SIZE / 2;
+                const circle = document.createElementNS(svgNS, "circle");
+                circle.setAttribute("cx", center);
+                circle.setAttribute("cy", 6);
+                circle.setAttribute("r", 5);
+                circle.setAttribute("fill", "black");
+                svg.appendChild(circle);
+            }
+            let prevHoldX = 0;
+            for (let partIndex = 0; partIndex < split.length; partIndex++) {
+                const part = split[partIndex];
+                const xOffset = (partIndex + .5) * INTERVAL_SIZE;
+                const actionInterval = INTERVAL_SIZE / (part.length + 1);
+                for (let actionIndex = 0; actionIndex < part.length; actionIndex++) {
+                    const action = part[actionIndex];
+                    if (action === "t") pathCode += `M${xOffset + (actionIndex + 1) * actionInterval} 21v10`;
+                    else if (action === "h") {
+                        prevHoldX = xOffset + (actionIndex + 1) * actionInterval;
+                        pathCode += `M${prevHoldX} 21v10`;
+                    } else if (action === "r") pathCode += `M${xOffset + (actionIndex + 1) * actionInterval} 21v10H${prevHoldX}`;
+                }
+            }
+            path.setAttribute("d", pathCode);
+            svg.appendChild(path);
+            return svg;
+        }
+
+        function setDefaultRules(rnd) {
+            setRules(rnd);
+        }
+    </script>
+    <style>
+        table {
+            margin: auto;
+        }
+
+        #bhAB-table td {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="section">
+        <div class="page page-bg-05">
+            <div class="page-header">
+                <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
+                <span class="page-header-section-title">Supermassive Black Hole</span>
+            </div>
+            <div class="page-content">
+                <img src="img/Component/SMBH.svg" class="diagram">
+                <h2>On the Subject of SMBH</h2>
+                <p class="flavour-text">TODO: write flover text</p>
+                <p>...</p>
+            </div>
+            <div class="page-footer relative-footer">Page 1 of 4</div>
+        </div>
+        <div class="page page-bg-04">
+            <div class="page-header">
+                <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
+                <span class="page-header-section-title">Supermassive Black Hole</span>
+            </div>
+            <div class="page-content">
+            </div>
+            <div class="page-footer relative-footer">Page 2 of 4</div>
+        </div>
+        <div class="page page-bg-07">
+            <div class="page-header">
+                <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
+                <span class="page-header-section-title">Supermassive Black Hole</span>
+            </div>
+            <div class="page-content">
+            </div>
+            <div class="page-footer relative-footer">Page 3 of 4</div>
+        </div>
+        <div class="page page-bg-03">
+            <div class="page-header">
+                <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
+                <span class="page-header-section-title">Supermassive Black Hole</span>
+            </div>
+            <div class="page-content">
+                <h2>Appendix — BHSCII Table</h2>
+                <table>
+                    <tbody id="bhAB-table"></tbody>
+                </table>
+            </div>
+            <div class="page-footer relative-footer">Page 4 of 4</div>
+        </div>
+    </div>
+</body>
+
+</html>
