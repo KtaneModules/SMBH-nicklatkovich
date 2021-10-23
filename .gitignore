@@ -19,7 +19,7 @@ Manual/font/
 Manual/img/*
 !Manual/img/Component/
 Manual/img/Component/*
-Manual/js/
+Manual/js/*
 
 Assembly-CSharp*
 /*.sln
@@ -31,3 +31,4 @@ Models/*
 !Assets/SMBH/
 !Manual/img/SMBH/
 !Manual/img/Component/SMBH.svg
+!Manual/js/SMBH/
