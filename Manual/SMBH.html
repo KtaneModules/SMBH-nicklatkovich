@@ -15,6 +15,12 @@
         const INTERVAL_SIZE = 25;
         const TICK_RADIUS = 8;
         const ROW_ITEMS_COUNT = 4;
+        const colors = ["Orange", "Red", "Yellow", "White", "Blue", "Green"];
+        const colorsForeground = {
+            "Blue": "white",
+            "Green": "white",
+            "Red": "white",
+        };
         const alternatives = ["h-r-t", "h-r"];
 
         function setRules(rnd) {
@@ -25,6 +31,31 @@
             /** @type {string[]} */
             const bhAB = [...pool.slice(0, 5), ...new Array(7).fill(""), c, ...new Array(23).fill("")];
             /** @type {{ [size: number]: string[] }} */
+            const codes = rnd.shuffleArray(generateBHCodes(rnd, bhAB));
+            for (let i = 0; i < bhAB.length; i++) {
+                if (bhAB[i]) continue;
+                bhAB[i] = codes.pop();
+            }
+            const table = document.getElementById("bhAB-table");
+            table.innerHTML = "";
+            for (let i = 0; i < Math.ceil(36 / ROW_ITEMS_COUNT); i++) {
+                const tr = table.appendChild(document.createElement("tr"));
+                for (let j = 0; j < ROW_ITEMS_COUNT; j++) {
+                    const index = i * ROW_ITEMS_COUNT + j;
+                    if (index >= bhAB.length) break;
+                    const origin = index < 10 ? index : `${index} (${String.fromCharCode(55 + index)})`;
+                    const code = bhAB[index];
+                    const td = tr.appendChild(document.createElement("td"));
+                    const originDiv = td.appendChild(document.createElement("div"));
+                    originDiv.innerText = origin;
+                    td.appendChild(createCode(code));
+                }
+            }
+            generateTwoColorTable(rnd);
+            generateThreeColorTables(rnd);
+        }
+
+        function generateBHCodes(rnd, bhAB) {
             const variants = {};
             const addVariant = (code) => {
                 if (variants[code.length]) variants[code.length].push(code);
@@ -44,7 +75,7 @@
                 const variantIndex = rnd.next(0, vars.length);
                 const prevCode = vars[variantIndex];
                 if (prevCode.length > 1 && bhAB.indexOf(prevCode) === -1) codes.push(prevCode);
-                if (codes.length >= bhAB.length - 6) break;
+                if (codes.length >= bhAB.length - 6) return codes;
                 vars[variantIndex] = vars[vars.length - 1];
                 vars.pop();
                 const lastTickIndex = prevCode.lastIndexOf("-");
@@ -57,25 +88,91 @@
                     addVariant(prevCode + "h--r");
                 }
             }
-            const shuffledCodes = rnd.shuffleArray(codes);
-            for (let i = 0; i < bhAB.length; i++) {
-                if (bhAB[i]) continue;
-                bhAB[i] = shuffledCodes.pop();
-            }
-            const table = document.getElementById("bhAB-table");
-            for (let i = 0; i < Math.ceil(36 / ROW_ITEMS_COUNT); i++) {
-                const tr = table.appendChild(document.createElement("tr"));
-                for (let j = 0; j < ROW_ITEMS_COUNT; j++) {
-                    const index = i * ROW_ITEMS_COUNT + j;
-                    if (index >= bhAB.length) break;
-                    const origin = index < 10 ? index : `${index} (${String.fromCharCode(55 + index)})`;
-                    const code = bhAB[index];
-                    const td = tr.appendChild(document.createElement("td"));
-                    const originDiv = td.appendChild(document.createElement("div"));
-                    originDiv.innerText = origin;
-                    td.appendChild(createCode(code));
+        }
+
+        function generateTwoColorTable(rnd) {
+            const table = document.getElementById("two-color-table");
+            table.innerHTML = "";
+            const firstTr = table.appendChild(document.createElement("tr"));
+            const secondTr = table.appendChild(document.createElement("tr"));
+            const rows = colors.map(() => table.appendChild(document.createElement("tr")));
+            for (const diskType of ["Rings", "Sectors", "Dynamic"]) {
+                const td = firstTr.appendChild(document.createElement("td"));
+                td.colSpan = 2;
+                td.innerText = diskType;
+                for (const dir of ["CW", "CCW"]) {
+                    const dirTd = secondTr.appendChild(document.createElement("td"));
+                    dirTd.innerText = dir;
+                    const columnColors = rnd.shuffleArray(colors);
+                    for (let i = 0; i < columnColors.length; i++) {
+                        const colorTd = rows[i].appendChild(document.createElement("td"));
+                        const cl = columnColors[i];
+                        colorTd.innerText = cl;
+                        colorTd.style.background = cl.toLowerCase();
+                        colorTd.style.color = colorsForeground[cl] || "black";
+                        colorTd.style.fontWeight = "bold";
+                    }
                 }
             }
+        }
+
+        function generateThreeColorData(rnd) {
+            const chars = rnd.shuffleArray(new Array(36).fill(null).map((_, i) => i < 10 ? i : String.fromCharCode(55 + i)));
+            const generated = {};
+            const cs = colors.map(c => c[0]);
+            for (let i1 = 0; i1 < cs.length; i1++) {
+                for (let i2 = i1 + 1; i2 < cs.length; i2++) {
+                    for (let i3 = i2 + 1; i3 < cs.length; i3++) {
+                        const [c1, c2, c3] = [i1, i2, i3].map(i => cs[i]);
+                        const clr = sortString(c1 + c2 + c3);
+                        generated[clr] = chars.pop();
+                    }
+                }
+            }
+            return generated;
+        }
+
+        function generateThreeColorTables(rnd) {
+            const container = document.getElementById("three-color-tables-container");
+            const generated = generateThreeColorData(rnd);
+            for (const color of colors) {
+                const tableContainer = container.appendChild(document.createElement("div"));
+                const h4 = tableContainer.appendChild(document.createElement("h4"));
+                h4.innerText = `If one of the colors is ${color}`;
+                const table = tableContainer.appendChild(document.createElement("table"));
+                const tableBody = table.appendChild(document.createElement("tbody"));
+                const otherColors = colors.filter(c => c !== color);
+                const firstTr = tableBody.appendChild(document.createElement("tr"));
+                const emptyTd = firstTr.appendChild(document.createElement("td"));
+                for (const color2 of otherColors) {
+                    const c2 = color2[0];
+                    const colTd = firstTr.appendChild(document.createElement("td"));
+                    colTd.innerText = c2;
+                    colTd.style.background = color2.toLowerCase();
+                    colTd.style.color = colorsForeground[color2] || "black";
+                    const tr = tableBody.appendChild(document.createElement("tr"));
+                    const firstTd = tr.appendChild(document.createElement("td"));
+                    firstTd.innerText = c2;
+                    firstTd.style.background = color2.toLowerCase();
+                    firstTd.style.color = colorsForeground[color2] || "black";
+                    for (const color3 of otherColors) {
+                        const c3 = color3[0];
+                        const td = tr.appendChild(document.createElement("td"));
+                        if (c2 === c3) {
+                            td.classList.add("empty-cell");
+                            continue;
+                        }
+                        const clr = sortString(color[0] + c2 + c3);
+                        td.innerText = generated[clr];
+                    }
+                }
+            }
+        }
+
+        function sortString(str) {
+            const chars = [...str];
+            chars.sort();
+            return chars.join("");
         }
 
         function createCode(code) {
@@ -126,12 +223,49 @@
     <style>
         table {
             margin: auto;
+            text-align: center;
         }
 
         #bhAB-table td {
-            text-align: center;
             font-weight: bold;
             font-size: 24px;
+            font-family: 'Consolas';
+        }
+
+        .less-font {
+            font-size: 15px;
+        }
+
+        #three-color-tables-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        #three-color-tables-container table {
+            border: none;
+            font-weight: bold;
+        }
+
+        #three-color-tables-container tr:first-child td:first-child {
+            border-top: none;
+            border-left: none;
+        }
+
+        #three-color-tables-container tr:not(:first-child) td:not(:first-child) {
+            font-family: 'Consolas';
+        }
+
+        .empty-cell {
+            background: url("img/SMBH/empty-cell-bg.png");
+        }
+
+        #single-colored-table td:first-child {
+            font-weight: bold;
+        }
+
+        #two-color-table tr:nth-child(2) td {
+            border-bottom: solid 3px;
         }
     </style>
 </head>
@@ -146,8 +280,32 @@
             <div class="page-content">
                 <img src="img/Component/SMBH.svg" class="diagram">
                 <h2>On the Subject of SMBH</h2>
-                <p class="flavour-text">TODO: write flover text</p>
-                <p>...</p>
+                <p class="flavour-text">Newton’s third law. You gotta leave something behind.</p>
+                <p>
+                    The module consists of a spherical Supermassive Black Hole (SMBH). To solve the module, you must enter 5 correct base36 digits into SMBH.
+                    The input is possible only if SMBH has an accretion disk.
+                    The faster the entry is made, the less time you will have to wait before the next accretion discs appear.
+                </p>
+                <p>
+                    Refer to "Appendix - BHSCII Table" for how to enter digits.
+                    In this table a dot represents a tick of the bomb's countdown timer (i.e., a change in the seconds value) going from left to right.
+                    A vertical line represents a tap on the module. Make sure that you press and release SMBH between two ticks.
+                    A bracket indicates holding SMBH across one or more ticks.
+                    If the instruction says to enter a number greater than 35, enter that number modulo 36.
+                </p>
+                <p>
+                    If you enter a non-base36 digit, the SMBH will display a "?" If you enter an invalid base36 digit, the entered digit will be displayed on SMBH.
+                    If you enter three incorrect digits for one accretion disk, you will receive a strike and the accretion disk will disappear. Input will not be counted.
+                </p>
+                <h3>Has no accretion disk</h3>
+                <p>When SMBH has no accretion disk, no action is required. Wait for the accretion disk to appear for input.</p>
+                <h3>Special case: bomb has unsolved "Black Hole" module(s)</h3>
+                <p>
+                    If the bomb has at least one unsolved "Black Hole" module, then the color of the accretion disk should be ignored
+                    (but the accretion disk still needs to be present).
+                    In this case, the sum of digits entered in the "Black Hole" modules must be entered into SMBH.
+                    The next accretion disk will not appear until the next digit is entered into the "Black Hole" module.
+                </p>
             </div>
             <div class="page-footer relative-footer">Page 1 of 4</div>
         </div>
@@ -157,6 +315,49 @@
                 <span class="page-header-section-title">Supermassive Black Hole</span>
             </div>
             <div class="page-content">
+                <h3>Single-colored accretion disk</h3>
+                <p>If the accretion disk is single-colored and does not change every second, then determine the digit to enter using the table below.</p>
+                <table id="single-colored-table" class="less-font">
+                    <tr>
+                        <td style="background: orange; color: black;">Orange</td>
+                        <td>Number of solved modules</td>
+                    </tr>
+                    <tr>
+                        <td style="background: red; color: white;">Red</td>
+                        <td>Get the number of serial and parallel ports modulo 6 plus 1.<br />Enter character of serial number located under that position</td>
+                    </tr>
+                    <tr>
+                        <td style="background: yellow; color: black;">Yellow</td>
+                        <td>Enter voltage of the bomb. If there are no Voltage Meter on the bomb enter sum of serial number digits + number of modules</td>
+                    </tr>
+                    <tr>
+                        <td style="background: white; color: black;">White</td>
+                        <td>Number of strikes + sum of least significant digits of each 2-factor code</td>
+                    </tr>
+                    <tr>
+                        <td style="background: blue; color: white;">Blue</td>
+                        <td>Starting time in minutes + least significant digit of greatest 2-factor code (add 0 if there are no 2-factor codes on the bomb)</td>
+                    </tr>
+                    <tr>
+                        <td style="background: green; color: white;">Green</td>
+                        <td>Number of ports</td>
+                    </tr>
+                </table>
+                <h3>Two-color accretion disk</h3>
+                <p>The accretion disc can be painted in different colors in three ways:</p>
+                <ul>
+                    <li>Rings - each color is represented by different rings of the accretion disk;</li>
+                    <li>Sectors - each color is represented by different sectors;</li>
+                    <li>Dynamic - the accretion disk changes color every second.</li>
+                </ul>
+                <p>The accretion disc can rotate in two directions: clockwise (CW) and counterclockwise (CCW).</p>
+                <p>
+                    Using these parameters, find the appropriate column in the table below.
+                    The top-most color in this column that is not currently on the disc is the third color.
+                </p>
+                <table>
+                    <tbody id="two-color-table"></tbody>
+                </table>
             </div>
             <div class="page-footer relative-footer">Page 2 of 4</div>
         </div>
@@ -166,6 +367,9 @@
                 <span class="page-header-section-title">Supermassive Black Hole</span>
             </div>
             <div class="page-content">
+                <h3>Three-color accretion disc</h3>
+                <p>Using all three colors, determine the character to be entered into SMBH. The first column and first row of each table is the first letter of the color.</p>
+                <div id="three-color-tables-container"></div>
             </div>
             <div class="page-footer relative-footer">Page 3 of 4</div>
         </div>
@@ -176,6 +380,7 @@
             </div>
             <div class="page-content">
                 <h2>Appendix — BHSCII Table</h2>
+                <p>(Only digits and English capital letters)</p>
                 <table>
                     <tbody id="bhAB-table"></tbody>
                 </table>
