@@ -121,5 +121,5 @@ function renderAccretionDisk() {
 	gl.uniform1f(timeLocation, Date.now() / 1e3 - initialTime);
 	gl.clearColor(0.0, 0.0, 0.0, 0.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
-	gl.drawArrays(gl.TRIANGLES, 0, 8);
+	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
