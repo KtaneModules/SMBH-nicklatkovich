@@ -67,6 +67,10 @@
 				return o;
 			}
 
+			float fract(float a) {
+				return a - floor(a);
+			}
+
 			fixed4 frag(v2f i) : SV_Target {
 				float2 pos = i.uv;
 				fixed4 n_0 = tex2D(_Noise_0, float2(pos.x + _Time.x * 0.3 * _Rotation_Speed, pos.y));
@@ -78,7 +82,7 @@
 				float b = sin(pos.y * PI / 2);
 				float a = (a_0 + a_1 + a_2) / 3.0 * min(1.0, pos.y * 5.0) * min(1.0, (1.0 - pos.y) * 5.0);
 				float3 col;
-				float xx = (pos.x + _Time.x * _Rotation_Speed * 0.766666) % 1;
+				float xx = fract(pos.x + _Time.x * _Rotation_Speed * 0.766666);
 				if (xx >= _Color_0_Min) col = _Color_0.rgb;
 				else if (xx > _Color_1_Max) col = lerp(_Color_1, _Color_0, (xx - _Color_1_Max) / (_Color_0_Min - _Color_1_Max)).rgb;
 				else if (xx >= _Color_1_Min) col = _Color_1.rgb;
