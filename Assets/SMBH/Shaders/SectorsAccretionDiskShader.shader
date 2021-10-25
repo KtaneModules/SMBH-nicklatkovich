@@ -12,6 +12,7 @@
 		_Color_1_Min ("Color 1 Min", Float) = 0.466666
 		_Color_2_Max ("Color 2 Max", Float) = 0.333333
 		_Color_2_Min ("Color 2 Max", Float) = 0.133333
+		_Alpha ("Alpha", Float) = 1.0
 	}
 	SubShader {
 		Tags {
@@ -56,6 +57,7 @@
 			float _Color_1_Min;
 			float _Color_2_Max;
 			float _Color_2_Min;
+			float _Alpha;
 			float4 _Noise_0_ST;
 			float4 _Noise_1_ST;
 			float4 _Noise_2_ST;
@@ -89,7 +91,7 @@
 				else if (xx > _Color_2_Max) col = lerp(_Color_2, _Color_1, (xx - _Color_2_Max) / (_Color_1_Min - _Color_2_Max)).rgb;
 				else if (xx >= _Color_2_Min) col = _Color_2.rgb;
 				else col = lerp(_Color_0, _Color_2, xx / _Color_2_Min).rgb;
-				return float4(lerp(float3(0.0, 0.0, 0.0), col, lerp(1.0, a, b)), lerp(a, 1.0, b));
+				return float4(lerp(float3(0.0, 0.0, 0.0), col, lerp(1.0, a, b)), lerp(a, 1.0, b) * _Alpha);
 			}
 			ENDCG
 		}

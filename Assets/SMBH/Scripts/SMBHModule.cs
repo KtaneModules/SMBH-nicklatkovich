@@ -7,7 +7,7 @@ public class SMBHModule : ModuleScript {
 	public const int ACCRETION_DISK_VERTICES_COUNT = 64;
 	public const float ACCRETION_DISK_RADIUS = 0.05f;
 	public const float MAX_RADIUS = 0.05f;
-	public static readonly Color[] COLORS = new[] { Color.red, Color.green, Color.blue, Color.yellow, (Color)new Color32(0xff, 0x80, 0, 0), Color.white };
+	public static readonly Color[] COLORS = new[] { (Color)new Color32(0xff, 0x80, 0, 0), Color.white, Color.red, Color.yellow, Color.green, Color.blue };
 	public static readonly Dictionary<string, float> TWO_RINGS = new Dictionary<string, float> {
 		{ "_Color_0_Min", 0.6f },
 		{ "_Color_1_Max", 0.4f },
@@ -39,68 +39,33 @@ public class SMBHModule : ModuleScript {
 	public GameObject AccretionDisk;
 	public Transform EventHorizon;
 
+	private float PrevAccretionDiskAlpha = 0f;
+	private float TargetAccretionDiskAlpha = 0f;
+
 	private void Start() {
-		Mesh accretionDiskMesh = AccretionDisk.GetComponent<MeshFilter>().mesh;
-		accretionDiskMesh.Clear();
-		accretionDiskMesh.vertices = CalculateAccretionDiskVertices();
-		accretionDiskMesh.uv = Enumerable.Range(0, ACCRETION_DISK_VERTICES_COUNT + 1).SelectMany(i => {
-			float x = (float)i / ACCRETION_DISK_VERTICES_COUNT;
-			return new[] { new Vector2(x, 0), new Vector2(x, 1) };
-		}).ToArray();
-		accretionDiskMesh.triangles = Enumerable.Range(0, ACCRETION_DISK_VERTICES_COUNT).SelectMany(i => (
-			new[] { 2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 2, 2 * i + 1, 2 * i + 3 }
-		)).Select(i => i % (2 * (ACCRETION_DISK_VERTICES_COUNT + 1))).ToArray();
+		CreateAccretionDisk();
 		EventHorizon.localScale = 2 * MAX_RADIUS * Vector3.one;
-		int shaderType = Random.Range(0, 3);
-		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
-		switch (shaderType) {
-			case 0:
-				AccretionDiskRenderer.material.shader = SingleColoredAccretionDiskShader;
-				AccretionDiskRenderer.material.SetColor("_Color", COLORS.PickRandom());
-				AccretionDiskRenderer.material.SetFloat("_Rotation_Speed", Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom());
-				break;
-			case 1: {
-					AccretionDiskRenderer.material.shader = RingsColoredAccretionDiskShader;
-					int colorsCount = Random.Range(2, 4);
-					Color c0 = COLORS.PickRandom();
-					Color c1 = COLORS.Where(c => c != c0).PickRandom();
-					AccretionDiskRenderer.material.SetColor("_Color_0", c0);
-					AccretionDiskRenderer.material.SetColor("_Color_1", c1);
-					if (colorsCount == 2) {
-						AccretionDiskRenderer.material.SetColor("_Color_2", c1);
-						foreach (KeyValuePair<string, float> property in TWO_RINGS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
-					} else if (colorsCount == 3) {
-						AccretionDiskRenderer.material.SetColor("_Color_2", COLORS.Where(c => c != c0 && c != c1).PickRandom());
-						foreach (KeyValuePair<string, float> property in THREE_RINGS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
-					} else throw new System.Exception("not 2-3 rings accretion disk not supported");
-					AccretionDiskRenderer.material.SetFloat("_Rotation_Speed", Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom());
-				}
-				break;
-			case 2: {
-					AccretionDiskRenderer.material.shader = SectorsColoredAccretionDiskShader;
-					int colorsCount = Random.Range(2, 4);
-					Color c0 = COLORS.PickRandom();
-					Color c1 = COLORS.Where(c => c != c0).PickRandom();
-					AccretionDiskRenderer.material.SetColor("_Color_0", c0);
-					AccretionDiskRenderer.material.SetColor("_Color_1", c1);
-					if (colorsCount == 2) {
-						AccretionDiskRenderer.material.SetColor("_Color_2", c0);
-						foreach (KeyValuePair<string, float> property in TWO_SECTORS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
-					} else if (colorsCount == 3) {
-						AccretionDiskRenderer.material.SetColor("_Color_2", COLORS.Where(c => c != c0 && c != c1).PickRandom());
-						foreach (KeyValuePair<string, float> property in THREE_SECTORS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
-					} else throw new System.Exception("not 2-3 rings accretion disk not supported");
-					AccretionDiskRenderer.material.SetFloat("_Rotation_Speed", Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom());
-				}
-				break;
-			default:
-				throw new System.Exception("Unknown shader type");
-		}
 	}
 
 	private void Update() {
 		Mesh accretionDiskMesh = AccretionDisk.GetComponent<MeshFilter>().mesh;
 		accretionDiskMesh.vertices = CalculateAccretionDiskVertices();
+		if (TargetAccretionDiskAlpha <= PrevAccretionDiskAlpha) {
+			PrevAccretionDiskAlpha -= Time.deltaTime;
+			if (PrevAccretionDiskAlpha <= TargetAccretionDiskAlpha) {
+				PrevAccretionDiskAlpha = TargetAccretionDiskAlpha;
+				ActivateAccretionDisk();
+				TargetAccretionDiskAlpha = 1f;
+			}
+		} else {
+			PrevAccretionDiskAlpha += Time.deltaTime;
+			if (PrevAccretionDiskAlpha >= TargetAccretionDiskAlpha) {
+				PrevAccretionDiskAlpha = TargetAccretionDiskAlpha;
+				TargetAccretionDiskAlpha = 0f;
+			}
+		}
+		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
+		AccretionDiskRenderer.material.SetFloat("_Alpha", PrevAccretionDiskAlpha);
 	}
 
 	public override void OnActivate() {
@@ -124,5 +89,73 @@ public class SMBHModule : ModuleScript {
 			res = res.normalized;
 			return new[] { maxAccretionDiskPoint * res, minAccretionDiskPoint * res };
 		}).ToArray();
+	}
+
+	private void CreateAccretionDisk() {
+		Mesh accretionDiskMesh = AccretionDisk.GetComponent<MeshFilter>().mesh;
+		accretionDiskMesh.Clear();
+		accretionDiskMesh.vertices = CalculateAccretionDiskVertices();
+		accretionDiskMesh.uv = Enumerable.Range(0, ACCRETION_DISK_VERTICES_COUNT + 1).SelectMany(i => {
+			float x = (float)i / ACCRETION_DISK_VERTICES_COUNT;
+			return new[] { new Vector2(x, 0), new Vector2(x, 1) };
+		}).ToArray();
+		accretionDiskMesh.triangles = Enumerable.Range(0, ACCRETION_DISK_VERTICES_COUNT).SelectMany(i => (
+			new[] { 2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 2, 2 * i + 1, 2 * i + 3 }
+		)).Select(i => i % (2 * (ACCRETION_DISK_VERTICES_COUNT + 1))).ToArray();
+		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
+		AccretionDiskRenderer.material.SetFloat("_Alpha", 0f);
+	}
+
+	private void ActivateAccretionDisk() {
+		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
+		if (Random.Range(0, 2) == 0) {
+			AccretionDiskRenderer.material.shader = SingleColoredAccretionDiskShader;
+			AccretionDiskRenderer.material.SetColor("_Color", PickRandomColor());
+		} else if (Random.Range(0, 3) != 0) {
+			AccretionDiskRenderer.material.shader = SectorsColoredAccretionDiskShader;
+			int colorsCount = Random.Range(2, 4);
+			Color c0 = PickRandomColor();
+			Color c1 = PickRandomColor(c0);
+			AccretionDiskRenderer.material.SetColor("_Color_0", c0);
+			AccretionDiskRenderer.material.SetColor("_Color_1", c1);
+			if (Random.Range(0, 3) == 0) {
+				AccretionDiskRenderer.material.SetColor("_Color_2", PickRandomColor(c0, c1));
+				foreach (KeyValuePair<string, float> property in THREE_SECTORS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
+			} else {
+				AccretionDiskRenderer.material.SetColor("_Color_2", c0);
+				foreach (KeyValuePair<string, float> property in TWO_SECTORS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
+			}
+		} else ActivateRingsAccretionDisk();
+		AccretionDiskRenderer.material.SetFloat("_Rotation_Speed", Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom());
+	}
+
+	private void ActivateRingsAccretionDisk() {
+		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
+		AccretionDiskRenderer.material.shader = RingsColoredAccretionDiskShader;
+		int colorsCount = Random.Range(2, 4);
+		Color c0 = COLORS.PickRandom();
+		Color c1 = COLORS.Where(c => c != c0).PickRandom();
+		AccretionDiskRenderer.material.SetColor("_Color_0", c0);
+		AccretionDiskRenderer.material.SetColor("_Color_1", c1);
+		if (Random.Range(0, 3) == 0) {
+			AccretionDiskRenderer.material.SetColor("_Color_2", PickRandomColor(c0, c1));
+			foreach (KeyValuePair<string, float> property in THREE_RINGS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
+		} else {
+			AccretionDiskRenderer.material.SetColor("_Color_2", c1);
+			foreach (KeyValuePair<string, float> property in TWO_RINGS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
+		}
+	}
+
+	public static Color PickRandomColor(params Color[] except) {
+		Color[] possibleColors = COLORS.Where(c => !except.Contains(c)).ToArray();
+		if (possibleColors.Length == 0) throw new System.Exception("Nothing to pick");
+		int max = Enumerable.Range(0, possibleColors.Length).Sum();
+		int rnd = Random.Range(0, max);
+		int counter = 0;
+		for (int i = 0; i < possibleColors.Length; i++) {
+			counter += i;
+			if (counter >= rnd) return possibleColors[possibleColors.Length - i - 1];
+		}
+		throw new System.Exception("Cannot pick random color");
 	}
 }

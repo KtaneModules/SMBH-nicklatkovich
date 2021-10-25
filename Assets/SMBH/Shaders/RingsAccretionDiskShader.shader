@@ -11,6 +11,7 @@
 		_Color_1_Max ("Color 1 Max", Float) = 0.575
 		_Color_1_Min ("Color 1 Min", Float) = 0.425
 		_Color_2_Max ("Color 2 Max", Float) = 0.3
+		_Alpha ("Alpha", Float) = 1.0
 	}
 	SubShader {
 		Tags {
@@ -54,6 +55,7 @@
 			float _Color_1_Max;
 			float _Color_1_Min;
 			float _Color_2_Max;
+			float _Alpha;
 			float4 _Noise_0_ST;
 			float4 _Noise_1_ST;
 			float4 _Noise_2_ST;
@@ -74,14 +76,15 @@
 				float a_1 = (n_1.r + n_1.g + n_1.b) / 3.0;
 				float a_2 = (n_2.r + n_2.g + n_2.b) / 3.0;
 				float b = sin(pos.y * PI / 2);
-				float a = (a_0 + a_1 + a_2) / 3.0 * min(1.0, pos.y * 5.0) * min(1.0, (1.0 - pos.y) * 5.0);
+				float aa = (a_0 + a_1 + a_2) / 3.0;
+				float a = aa * min(1.0, pos.y * 5.0) * (min(1.0, (1.0 - pos.y) * 5.0));
 				float3 col;
 				if (pos.y >= _Color_0_Min) col = _Color_0.rgb;
 				else if (pos.y > _Color_1_Max) col = lerp(_Color_1, _Color_0, (pos.y - _Color_1_Max) / (_Color_0_Min - _Color_1_Max)).rgb;
 				else if (pos.y >= _Color_1_Min) col = _Color_1.rgb;
 				else if (pos.y > _Color_2_Max) col = lerp(_Color_2, _Color_1, (pos.y - _Color_2_Max) / (_Color_1_Min - _Color_2_Max)).rgb;
 				else col = _Color_2.rgb;
-				return float4(lerp(float3(0.0, 0.0, 0.0), col, lerp(1.0, a, b)), lerp(a, 1.0, b));
+				return float4(lerp(float3(0.0, 0.0, 0.0), col, lerp(1.0, a, b)), lerp(a, 1.0, b) * _Alpha);
 			}
 			ENDCG
 		}
