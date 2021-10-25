@@ -73,7 +73,7 @@
         const INTERVAL_SIZE = 25;
         const TICK_RADIUS = 8;
         const ROW_ITEMS_COUNT = 4;
-        const colors = ["Orange", "Red", "Yellow", "White", "Blue", "Green"];
+        const colors = ["Orange", "White", "Red", "Yellow", "Green", "Blue"];
         const colorsForeground = {
             "Blue": "white",
             "Green": "white",
@@ -162,7 +162,7 @@
                     const dirTd = secondTr.appendChild(document.createElement("td"));
                     dirTd.innerText = dir;
                     const columnColors = rnd.shuffleArray(colors);
-                    for (let i = 0; i < columnColors.length; i++) {
+                    for (let i = 0; i < 3; i++) {
                         const colorTd = rows[i].appendChild(document.createElement("td"));
                         const cl = columnColors[i];
                         colorTd.innerText = cl;
@@ -388,10 +388,14 @@
             <div class="page-content">
                 <h3>Single-colored accretion disk</h3>
                 <p>If the accretion disk is single-colored and does not change every second, then determine the digit to enter using the table below.</p>
-                <table id="single-colored-table" class="less-font">
+                <table id="single-colored-table">
                     <tr>
                         <td style="background: orange; color: black;">Orange</td>
                         <td>Number of solved modules</td>
+                    </tr>
+                    <tr>
+                        <td style="background: white; color: black;">White</td>
+                        <td>Number of strikes + sum of least significant digits of each 2-factor code</td>
                     </tr>
                     <tr>
                         <td style="background: red; color: white;">Red</td>
@@ -402,16 +406,12 @@
                         <td>Enter voltage of the bomb. If there are no Voltage Meter on the bomb enter sum of serial number digits + number of modules</td>
                     </tr>
                     <tr>
-                        <td style="background: white; color: black;">White</td>
-                        <td>Number of strikes + sum of least significant digits of each 2-factor code</td>
+                        <td style="background: green; color: white;">Green</td>
+                        <td>Number of ports</td>
                     </tr>
                     <tr>
                         <td style="background: blue; color: white;">Blue</td>
                         <td>Starting time in minutes + least significant digit of greatest 2-factor code (add 0 if there are no 2-factor codes on the bomb)</td>
-                    </tr>
-                    <tr>
-                        <td style="background: green; color: white;">Green</td>
-                        <td>Number of ports</td>
                     </tr>
                 </table>
                 <h3>Two-color accretion disk</h3>

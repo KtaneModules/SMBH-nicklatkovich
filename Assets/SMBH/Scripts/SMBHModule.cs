@@ -4,6 +4,7 @@ using UnityEngine;
 using KeepCoding;
 
 public class SMBHModule : ModuleScript {
+	public const int STAGES_COUNT = 5;
 	public const int ACCRETION_DISK_VERTICES_COUNT = 64;
 	public const float ACCRETION_DISK_RADIUS = 0.05f;
 	public const float MAX_RADIUS = 0.05f;
@@ -32,44 +33,91 @@ public class SMBHModule : ModuleScript {
 		{ "_Color_2_Max", 0.333333f },
 		{ "_Color_2_Min", 0.133333f },
 	};
+	private static readonly Dictionary<AccretionDiskType, string> TYPE_TO_STRING = new Dictionary<AccretionDiskType, string> {
+		{ AccretionDiskType.SOLID, "Single colored" },
+		{ AccretionDiskType.SECTORS, "Sectors" },
+		{ AccretionDiskType.RINGS, "Rings" },
+		{ AccretionDiskType.DYNAMIC, "Dynamic" },
+	};
+
+	private enum ModuleState { DISABLED, ENABLED, HELD, RELEASED }
+	private enum AccretionDiskType { SOLID, SECTORS, RINGS, DYNAMIC }
 
 	public Shader SingleColoredAccretionDiskShader;
 	public Shader RingsColoredAccretionDiskShader;
 	public Shader SectorsColoredAccretionDiskShader;
 	public GameObject AccretionDisk;
 	public Transform EventHorizon;
+	public KMBombInfo BombInfo;
+	public KMBossModule BossModule;
 
+	private bool AccretionDiskActivated = false;
+	private ModuleState State = ModuleState.DISABLED;
+	private AccretionDiskType DiskType;
+	private int PassedStagesCount = 0;
+	private float AveragePassingTime = float.PositiveInfinity;
 	private float PrevAccretionDiskAlpha = 0f;
 	private float TargetAccretionDiskAlpha = 0f;
+	private float ActivationTimeout = 0f;
+	private Color[] AccretionDiskColors;
+	private HashSet<string> IgnoreList;
 
 	private void Start() {
 		CreateAccretionDisk();
 		EventHorizon.localScale = 2 * MAX_RADIUS * Vector3.one;
+		IgnoreList = new HashSet<string>(BossModule.GetIgnoredModules("SMBH", SMBHUtils.DefaultIgnoredModules));
 	}
 
 	private void Update() {
+		if (!IsActive) return;
 		Mesh accretionDiskMesh = AccretionDisk.GetComponent<MeshFilter>().mesh;
 		accretionDiskMesh.vertices = CalculateAccretionDiskVertices();
-		if (TargetAccretionDiskAlpha <= PrevAccretionDiskAlpha) {
-			PrevAccretionDiskAlpha -= Time.deltaTime;
-			if (PrevAccretionDiskAlpha <= TargetAccretionDiskAlpha) {
-				PrevAccretionDiskAlpha = TargetAccretionDiskAlpha;
+		if (State == ModuleState.DISABLED) {
+			ActivationTimeout -= Time.deltaTime;
+			List<string> unsolvedModules = BombInfo.GetUnsolvedModuleNames();
+			int unignoredUnsolvedModulesCount = unsolvedModules.Where(m => !IgnoreList.Contains(m)).Count();
+			if (ActivationTimeout >= 5f && unignoredUnsolvedModulesCount == 0) OnNoUnsolvedModules();
+			else if (ActivationTimeout <= 0f) {
+				State = ModuleState.ENABLED;
 				ActivateAccretionDisk();
 				TargetAccretionDiskAlpha = 1f;
 			}
-		} else {
-			PrevAccretionDiskAlpha += Time.deltaTime;
-			if (PrevAccretionDiskAlpha >= TargetAccretionDiskAlpha) {
-				PrevAccretionDiskAlpha = TargetAccretionDiskAlpha;
-				TargetAccretionDiskAlpha = 0f;
-			}
 		}
-		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
-		AccretionDiskRenderer.material.SetFloat("_Alpha", PrevAccretionDiskAlpha);
+		float newAlpha = PrevAccretionDiskAlpha;
+		newAlpha += Mathf.Sign(TargetAccretionDiskAlpha - PrevAccretionDiskAlpha) * Time.deltaTime;
+		if (PrevAccretionDiskAlpha != newAlpha) {
+			Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
+			AccretionDiskRenderer.material.SetFloat("_Alpha", newAlpha);
+			PrevAccretionDiskAlpha = newAlpha;
+		}
+	}
+
+	private void OnNoUnsolvedModules() {
+		ActivationTimeout = Random.Range(1f, 5f);
+		Log("No unsolved modules. Next activation in {0} seconds", Mathf.Ceil(ActivationTimeout));
+	}
+
+	private void CalculateActivationTime() {
+		List<string> unsolvedModules = BombInfo.GetUnsolvedModuleNames();
+		int unignoredUnsolvedModulesCount = unsolvedModules.Where(m => !IgnoreList.Contains(m)).Count();
+		if (unignoredUnsolvedModulesCount == 0) {
+			OnNoUnsolvedModules();
+			return;
+		}
+		int leftStages = STAGES_COUNT - PassedStagesCount;
+		float bombTime = BombInfo.GetTime() - 20f;
+		float avgLeft = bombTime / leftStages;
+		if (AveragePassingTime >= avgLeft) ActivationTimeout = Random.Range(1f, Mathf.Max(5f, avgLeft));
+		else {
+			float avg = (AveragePassingTime * PassedStagesCount + bombTime) / STAGES_COUNT;
+			ActivationTimeout = Random.Range(1f, Mathf.Max(5f, avg));
+		}
+		Log("Next activation in {0} seconds", Mathf.Ceil(ActivationTimeout));
 	}
 
 	public override void OnActivate() {
 		base.OnActivate();
+		CalculateActivationTime();
 	}
 
 	private Vector3[] CalculateAccretionDiskVertices() {
@@ -109,9 +157,13 @@ public class SMBHModule : ModuleScript {
 	private void ActivateAccretionDisk() {
 		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
 		if (Random.Range(0, 2) == 0) {
+			DiskType = AccretionDiskType.SOLID;
 			AccretionDiskRenderer.material.shader = SingleColoredAccretionDiskShader;
-			AccretionDiskRenderer.material.SetColor("_Color", PickRandomColor());
+			Color cl = PickRandomColor();
+			AccretionDiskColors = new[] { cl };
+			AccretionDiskRenderer.material.SetColor("_Color", cl);
 		} else if (Random.Range(0, 3) != 0) {
+			DiskType = AccretionDiskType.SECTORS;
 			AccretionDiskRenderer.material.shader = SectorsColoredAccretionDiskShader;
 			int colorsCount = Random.Range(2, 4);
 			Color c0 = PickRandomColor();
@@ -119,17 +171,25 @@ public class SMBHModule : ModuleScript {
 			AccretionDiskRenderer.material.SetColor("_Color_0", c0);
 			AccretionDiskRenderer.material.SetColor("_Color_1", c1);
 			if (Random.Range(0, 3) == 0) {
-				AccretionDiskRenderer.material.SetColor("_Color_2", PickRandomColor(c0, c1));
+				Color c2 = PickRandomColor(c0, c1);
+				AccretionDiskColors = new[] { c0, c1, c2 };
+				AccretionDiskRenderer.material.SetColor("_Color_2", c2);
 				foreach (KeyValuePair<string, float> property in THREE_SECTORS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
 			} else {
+				AccretionDiskColors = new[] { c0, c1 };
 				AccretionDiskRenderer.material.SetColor("_Color_2", c0);
 				foreach (KeyValuePair<string, float> property in TWO_SECTORS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
 			}
 		} else ActivateRingsAccretionDisk();
-		AccretionDiskRenderer.material.SetFloat("_Rotation_Speed", Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom());
+		float rotationSpeed = Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom();
+		AccretionDiskRenderer.material.SetFloat("_Rotation_Speed", rotationSpeed);
+		Log("Accretion disk activated. Type: {0}. Rotation: {1}. Colors: {2}", TYPE_TO_STRING[DiskType], rotationSpeed < 0 ? "CCW" : "CW", AccretionDiskColors.Select(c => (
+			SMBHUtils.NameOfColor[c]
+		)).Join(","));
 	}
 
 	private void ActivateRingsAccretionDisk() {
+		DiskType = AccretionDiskType.RINGS;
 		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
 		AccretionDiskRenderer.material.shader = RingsColoredAccretionDiskShader;
 		int colorsCount = Random.Range(2, 4);
@@ -138,9 +198,12 @@ public class SMBHModule : ModuleScript {
 		AccretionDiskRenderer.material.SetColor("_Color_0", c0);
 		AccretionDiskRenderer.material.SetColor("_Color_1", c1);
 		if (Random.Range(0, 3) == 0) {
-			AccretionDiskRenderer.material.SetColor("_Color_2", PickRandomColor(c0, c1));
+			Color c2 = PickRandomColor(c0, c1);
+			AccretionDiskColors = new[] { c0, c1, c2 };
+			AccretionDiskRenderer.material.SetColor("_Color_2", c2);
 			foreach (KeyValuePair<string, float> property in THREE_RINGS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
 		} else {
+			AccretionDiskColors = new[] { c0, c1 };
 			AccretionDiskRenderer.material.SetColor("_Color_2", c1);
 			foreach (KeyValuePair<string, float> property in TWO_RINGS) AccretionDiskRenderer.material.SetFloat(property.Key, property.Value);
 		}

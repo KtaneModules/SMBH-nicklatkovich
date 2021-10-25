@@ -56,6 +56,7 @@ GameObject:
   - component: {fileID: 114709621532374978}
   - component: {fileID: 114834488669949776}
   - component: {fileID: 114034211471766636}
+  - component: {fileID: 114865020882040028}
   - component: {fileID: 114056791627916250}
   m_Layer: 0
   m_Name: SMBHModule
@@ -392,6 +393,8 @@ MonoBehaviour:
     type: 3}
   AccretionDisk: {fileID: 1829151077107772}
   EventHorizon: {fileID: 4925335270610768}
+  BombInfo: {fileID: 114834488669949776}
+  BossModule: {fileID: 114865020882040028}
 --- !u!114 &114119780502958410
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -476,6 +479,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 2144496390, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &114865020882040028
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1589040422942240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96a2fc4ae3e690a498a0d85a2b5e0b99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &114882052478959090
