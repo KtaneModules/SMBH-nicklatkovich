@@ -82,7 +82,7 @@
         const alternatives = ["h-r-t", "h-r"];
 
         function setRules(rnd) {
-            for (var i = rnd.next(0, 10); i > 0; i--) rnd.nextDouble();
+            for (let i = rnd.next(0, 10); i > 0; i--) rnd.nextDouble();
             /** @type {string[]} */
             const pool = rnd.shuffleArray(["t-t", "h-rh-r", "t-h-r", "h--r", alternatives[rnd.next(0, alternatives.length)], "t--t"]);
             const c = ["h-rt", "tt", "th-r"][rnd.next(0, 3)];
@@ -154,14 +154,18 @@
             const firstTr = table.appendChild(document.createElement("tr"));
             const secondTr = table.appendChild(document.createElement("tr"));
             const rows = colors.map(() => table.appendChild(document.createElement("tr")));
+            const topRowColors = rnd.shuffleArray(colors);
+            let columnIndex = 0;
             for (const diskType of ["Rings", "Sectors", "Dynamic"]) {
                 const td = firstTr.appendChild(document.createElement("td"));
                 td.colSpan = 2;
                 td.innerText = diskType;
                 for (const dir of ["CW", "CCW"]) {
+                    const topColor = topRowColors[columnIndex];
+                    const columnColors = [topColor, ...rnd.shuffleArray(colors.filter((c) => c !== topColor))];
+                    columnIndex += 1;
                     const dirTd = secondTr.appendChild(document.createElement("td"));
                     dirTd.innerText = dir;
-                    const columnColors = rnd.shuffleArray(colors);
                     for (let i = 0; i < 3; i++) {
                         const colorTd = rows[i].appendChild(document.createElement("td"));
                         const cl = columnColors[i];
@@ -353,9 +357,9 @@
                 <h2>On the Subject of SMBH</h2>
                 <p class="flavour-text">Newton’s third law. You gotta leave something behind.</p>
                 <p>
-                    The module consists of a spherical Supermassive Black Hole (SMBH). To solve the module, you must enter 5 correct base36 digits into SMBH.
+                    The module consists of a spherical Supermassive Black Hole (SMBH). To solve the module, you must enter 12 correct base36 digits into SMBH.
+                    If the correct entry is made within the first minute after the appearance of the accretion disk, then three entries will be counted instead of one.
                     The input is possible only if SMBH has an accretion disk.
-                    The faster the entry is made, the less time you will have to wait before the next accretion discs appear.
                 </p>
                 <p>
                     Refer to "Appendix - BHSCII Table" for how to enter digits.
@@ -366,7 +370,6 @@
                 </p>
                 <p>
                     If you enter a non-base36 digit, the SMBH will display a "?" If you enter an invalid base36 digit, the entered digit will be displayed on SMBH.
-                    If you enter three incorrect digits for one accretion disk, you will receive a strike and the accretion disk will disappear. Input will not be counted.
                 </p>
                 <h3>Has no accretion disk</h3>
                 <p>When SMBH has no accretion disk, no action is required. Wait for the accretion disk to appear for input.</p>
@@ -403,7 +406,7 @@
                     </tr>
                     <tr>
                         <td style="background: yellow; color: black;">Yellow</td>
-                        <td>Enter voltage of the bomb. If there are no Voltage Meter on the bomb enter sum of serial number digits + number of modules</td>
+                        <td>Enter voltage of the bomb round down. If there are no Voltage Meter on the bomb enter sum of serial number digits + number of modules</td>
                     </tr>
                     <tr>
                         <td style="background: green; color: white;">Green</td>

@@ -12,6 +12,7 @@
 		_Color_1_Min ("Color 1 Min", Float) = 0.425
 		_Color_2_Max ("Color 2 Max", Float) = 0.3
 		_Alpha ("Alpha", Float) = 1.0
+		_Event_Horizon_Color ("Event Horizon Color", Color) = (0, 0, 0)
 	}
 	SubShader {
 		Tags {
@@ -56,6 +57,7 @@
 			float _Color_1_Min;
 			float _Color_2_Max;
 			float _Alpha;
+			float4 _Event_Horizon_Color;
 			float4 _Noise_0_ST;
 			float4 _Noise_1_ST;
 			float4 _Noise_2_ST;
@@ -84,7 +86,7 @@
 				else if (pos.y >= _Color_1_Min) col = _Color_1.rgb;
 				else if (pos.y > _Color_2_Max) col = lerp(_Color_2, _Color_1, (pos.y - _Color_2_Max) / (_Color_1_Min - _Color_2_Max)).rgb;
 				else col = _Color_2.rgb;
-				return float4(lerp(float3(0.0, 0.0, 0.0), col, lerp(1.0, a, b)), lerp(a, 1.0, b) * _Alpha);
+				return float4(lerp(_Event_Horizon_Color, col, lerp(1.0, a, b)), lerp(a, 1.0, b) * _Alpha);
 			}
 			ENDCG
 		}
