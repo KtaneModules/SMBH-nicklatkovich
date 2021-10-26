@@ -223,6 +223,7 @@
                         const td = tr.appendChild(document.createElement("td"));
                         if (c2 === c3) {
                             td.classList.add("empty-cell");
+                            td.style.backgroundColor = color;
                             continue;
                         }
                         const clr = sortString(color[0] + c2 + c3);
@@ -329,7 +330,7 @@
         }
 
         .empty-cell {
-            background: url("img/SMBH/empty-cell-bg.png");
+            background-image: url("img/SMBH/empty-cell-bg.png");
         }
 
         #single-colored-table td:first-child {
@@ -358,7 +359,7 @@
                 <p class="flavour-text">Newton’s third law. You gotta leave something behind.</p>
                 <p>
                     The module consists of a spherical Supermassive Black Hole (SMBH). To solve the module, you must enter 12 correct base36 digits into SMBH.
-                    If the correct entry is made within the first minute after the appearance of the accretion disk, then three entries will be counted instead of one.
+                    If the correct entry is made within the first minute after the appearance of the accretion disk, then two entries will be counted instead of one.
                     The input is possible only if SMBH has an accretion disk.
                 </p>
                 <p>

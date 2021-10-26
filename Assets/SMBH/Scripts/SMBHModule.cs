@@ -6,6 +6,7 @@ using KeepCoding;
 using KModkit;
 
 using AccretionDiskType = SMBHUtils.AccretionDiskType;
+using SMBHBombInfo = BHReflector.SMBHBombInfo;
 
 public class SMBHModule : ModuleScript {
 	private class VoltData {
@@ -67,6 +68,8 @@ public class SMBHModule : ModuleScript {
 	public KMBombInfo BombInfo;
 	public KMBossModule BossModule;
 
+	public bool AccretionDiskActive { get { return State == ModuleState.ENABLED || State == ModuleState.HELD || State == ModuleState.RELEASED; } }
+
 	private bool AccretionDiskActivated = false;
 	private int StartingTimeInMinutes;
 	private ModuleState State = ModuleState.DISABLED;
@@ -80,6 +83,7 @@ public class SMBHModule : ModuleScript {
 	private string Input = "";
 	private Color[] AccretionDiskColors;
 	private HashSet<string> IgnoreList;
+	private SMBHBombInfo Info;
 
 	private void Start() {
 		CreateAccretionDisk();
@@ -97,9 +101,11 @@ public class SMBHModule : ModuleScript {
 			int unignoredUnsolvedModulesCount = unsolvedModules.Where(m => !IgnoreList.Contains(m)).Count();
 			if (ActivationTimeout >= 5f && unignoredUnsolvedModulesCount == 0) OnNoUnsolvedModules();
 			else if (ActivationTimeout <= 0f) {
-				State = ModuleState.ENABLED;
-				ActivateAccretionDisk();
-				TargetAccretionDiskAlpha = 1f;
+				if (CanActivate()) {
+					State = ModuleState.ENABLED;
+					ActivateAccretionDisk();
+					TargetAccretionDiskAlpha = 1f;
+				} else CalculateActivationTime();
 			}
 		}
 		float newAlpha = PrevAccretionDiskAlpha;
@@ -111,8 +117,23 @@ public class SMBHModule : ModuleScript {
 		}
 	}
 
+	public bool CanActivate() {
+		if (Info == null) return true;
+		if (BombInfo.GetUnsolvedModuleIDs().Count(m => m == BHReflector.BLACK_HOLE_MODULE_ID) > 0) {
+			if (Info.DigitsEntered == Info.LastProcessedDigitsEntered) {
+				Log("Last processed Black Hole digit already processed. Activation delayed");
+				return false;
+			}
+			bool result = Info.Modules.All(m => !m.AccretionDiskActivated);
+			if (!result) Log("Another SMBH waiting for Black Hole digits sum. Activation delayed");
+			return result;
+		}
+		return true;
+	}
+
 	public override void OnTimerTick() {
 		base.OnTimerTick();
+		if (IsSolved) return;
 		if (State == ModuleState.DISABLED || State == ModuleState.ENABLED) return;
 		Input += "-";
 		if (Input.Length > 1 && Input.TakeLast(2).All(c => c == '-') && Input.LastIndexOf('r') >= Input.LastIndexOf('h')) {
@@ -124,10 +145,11 @@ public class SMBHModule : ModuleScript {
 				Text.text = "?";
 				State = ModuleState.ENABLED;
 			} else if (num == expected) {
+				if (Info != null) Info.LastProcessedDigitsEntered = Info.DigitsEntered.Value;
 				Log("Valid input: {0} ({1})", Base36ToChar(num), Input);
 				Text.text = "";
 				float passedTime = Time.time - ActivationTime;
-				int passedStagesAddition = passedTime < 60f ? 3 : 1;
+				int passedStagesAddition = passedTime < 60f ? 2 : 1;
 				PassedStagesCount += passedStagesAddition;
 				Log("Stage passed in {0} seconds. Passed stages +{1} ({2})", Mathf.Ceil(passedTime), passedStagesAddition, PassedStagesCount);
 				if (PassedStagesCount >= STAGES_COUNT) {
@@ -179,9 +201,11 @@ public class SMBHModule : ModuleScript {
 		CalculateActivationTime();
 		EventHorizon.Selectable.OnInteract += () => { OnHold(); return false; };
 		EventHorizon.Selectable.OnInteractEnded += OnRelease;
+		Info = BHReflector.GetBHBombInfo(this);
 	}
 
 	private void OnHold() {
+		if (IsSolved) return;
 		if (State == ModuleState.DISABLED) return;
 		if (State == ModuleState.ENABLED) {
 			Input = "h";
@@ -195,6 +219,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private void OnRelease() {
+		if (IsSolved) return;
 		if (State == ModuleState.HELD) {
 			if (Input.Last() == 'h') Input = Input.SkipLast(1).Join("") + "t";
 			else Input += "r";
@@ -294,6 +319,10 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private int CalculateValidAnswer() {
+		if (BombInfo.GetUnsolvedModuleIDs().Any(m => m == BHReflector.BLACK_HOLE_MODULE_ID) && Info != null) {
+			int? digitsEntered = Info.DigitsEntered;
+			if (digitsEntered != null) return Info.SolutionCode.Take(digitsEntered.Value).Sum();
+		}
 		if (DiskType == AccretionDiskType.SOLID) {
 			Color cl = AccretionDiskColors[0];
 			if (cl == SMBHUtils.ORANGE) return BombInfo.GetSolvedModuleIDs().Count;
