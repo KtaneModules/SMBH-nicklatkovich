@@ -19,6 +19,8 @@ public class SMBHModule : ModuleScript {
 	public const int ACCRETION_DISK_VERTICES_COUNT = 64;
 	public const float ACCRETION_DISK_RADIUS = 0.05f;
 	public const float MAX_RADIUS = 0.05f;
+	public const float MIN_ACTIVATION_TIMEOUT = 2f;
+	public const string ACTIVATION_SOUND = "Activated";
 	public static readonly Color[] COLORS = SMBHUtils.COLORS;
 	public static readonly Dictionary<string, float> TWO_RINGS = new Dictionary<string, float> {
 		{ "_Color_0_Min", 0.6f },
@@ -147,38 +149,13 @@ public class SMBHModule : ModuleScript {
 			int num = SMBHUtils.ParseBHCode(Input, RuleSeed.Seed);
 			int expected = CalculateValidAnswer() % 36;
 			if (num < 0) {
-				AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", transform);
+				AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, transform);
 				Log("Unknown code entered: {0}", Input);
 				Text.text = "?";
 				State = ModuleState.ENABLED;
-			} else if (num == expected) {
-				if (Info.bhInfo != null) Info.bhInfo.LastProcessedDigitsEntered = Info.bhInfo.DigitsEntered;
-				Log("Valid input: {0} ({1})", Base36ToChar(num), Input);
-				Text.text = "";
-				float passedTime = Time.time - ActivationTime;
-				int passedStagesAddition = passedTime < 60f ? 2 : 1;
-				PassedStagesCount += passedStagesAddition;
-				Log("Stage passed in {0} seconds. Passed stages +{1} ({2})", Mathf.Ceil(passedTime), passedStagesAddition, PassedStagesCount);
-				if (PassedStagesCount >= STAGES_COUNT) {
-					State = ModuleState.SOLVED;
-					Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
-					AccretionDiskRenderer.material.SetColor("_Event_Horizon_Color", Color.green);
-					Log("Module solved");
-					EventHorizon.Solved = true;
-					Solve();
-					Audio.PlaySoundAtTransform("Solved", transform);
-				} else {
-					State = ModuleState.DISABLED;
-					CalculateActivationTime();
-					TargetAccretionDiskAlpha = 0f;
-					Audio.PlaySoundAtTransform("ValidEntry", transform);
-				}
-				foreach (SMBHModule m in Info.Modules) {
-					if (!m.AccretionDiskActivated) continue;
-					m.AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", m.transform);
-				}
-			} else {
-				AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", transform);
+			} else if (num == expected) OnValidEntry(num);
+			else {
+				AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, transform);
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
 				Text.text = Base36ToChar(num).ToString();
 				State = ModuleState.ENABLED;
@@ -186,8 +163,36 @@ public class SMBHModule : ModuleScript {
 		} else Text.text = Input;
 	}
 
+	private void OnValidEntry(int num) {
+		if (Info.bhInfo != null) Info.bhInfo.LastProcessedDigitsEntered = Info.bhInfo.DigitsEntered;
+		Log("Valid input: {0} ({1})", Base36ToChar(num), Input);
+		Text.text = "";
+		float passedTime = Time.time - ActivationTime;
+		int passedStagesAddition = passedTime < 60f ? 2 : 1;
+		PassedStagesCount += passedStagesAddition;
+		Log("Stage passed in {0} seconds. Passed stages +{1} ({2})", Mathf.Ceil(passedTime), passedStagesAddition, PassedStagesCount);
+		if (PassedStagesCount >= STAGES_COUNT) {
+			State = ModuleState.SOLVED;
+			Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
+			AccretionDiskRenderer.material.SetColor("_Event_Horizon_Color", Color.green);
+			Log("Module solved");
+			EventHorizon.Solved = true;
+			Solve();
+			Audio.PlaySoundAtTransform("Solved", transform);
+		} else {
+			State = ModuleState.DISABLED;
+			CalculateActivationTime();
+			TargetAccretionDiskAlpha = 0f;
+			Audio.PlaySoundAtTransform("ValidEntry", transform);
+		}
+		foreach (SMBHModule m in Info.Modules) {
+			if (!m.AccretionDiskActivated) continue;
+			m.AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, m.transform);
+		}
+	}
+
 	private void OnNoUnsolvedModules() {
-		ActivationTimeout = Random.Range(1f, 5f);
+		ActivationTimeout = Random.Range(MIN_ACTIVATION_TIMEOUT, 5f);
 		Log("No unsolved modules. Next activation in {0} seconds", Mathf.Ceil(ActivationTimeout));
 	}
 
@@ -201,10 +206,10 @@ public class SMBHModule : ModuleScript {
 		int leftStages = STAGES_COUNT - PassedStagesCount;
 		float bombTime = BombInfo.GetTime() - 20f;
 		float avgLeft = bombTime / leftStages;
-		if (AveragePassingTime >= avgLeft) ActivationTimeout = Random.Range(1f, Mathf.Max(5f, avgLeft));
+		if (AveragePassingTime >= avgLeft) ActivationTimeout = Random.Range(MIN_ACTIVATION_TIMEOUT, Mathf.Max(5f, avgLeft));
 		else {
 			float avg = (AveragePassingTime * PassedStagesCount + bombTime) / STAGES_COUNT;
-			ActivationTimeout = Random.Range(1f, Mathf.Max(5f, avg));
+			ActivationTimeout = Random.Range(MIN_ACTIVATION_TIMEOUT, Mathf.Max(5f, avg));
 		}
 		Log("Next activation in {0} seconds", Mathf.Ceil(ActivationTimeout));
 	}
@@ -283,7 +288,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private void ActivateAccretionDisk() {
-		if (Info.Modules.All(m => m.AudioRef == null)) AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", transform);
+		if (Info.Modules.All(m => m.AudioRef == null)) AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, transform);
 		ActivationTime = Time.time;
 		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
 		float rotationSpeed = Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom();
