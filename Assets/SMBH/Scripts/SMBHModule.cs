@@ -5,7 +5,6 @@ using UnityEngine;
 using KeepCoding;
 using KModkit;
 
-using KMAudioRef = KMAudio.KMAudioRef;
 using AccretionDiskType = SMBHUtils.AccretionDiskType;
 using SMBHBombInfo = BHReflector.SMBHBombInfo;
 
@@ -68,11 +67,11 @@ public class SMBHModule : ModuleScript {
 	public Shader RingsColoredAccretionDiskShader;
 	public Shader SectorsColoredAccretionDiskShader;
 	public GameObject AccretionDisk;
-	public TextMesh Text;
 	public EventHorizonComponent EventHorizon;
 	public KMBombInfo BombInfo;
 	public KMBossModule BossModule;
 	public KMAudio Audio;
+	public SymbolsContainer Symbols;
 
 	public bool AccretionDiskActive { get { return State == ModuleState.ENABLED || State == ModuleState.HELD || State == ModuleState.RELEASED; } }
 
@@ -147,26 +146,26 @@ public class SMBHModule : ModuleScript {
 			int expected = CalculateValidAnswer() % 36;
 			if (num < 0) {
 				Log("Unknown code entered: {0}", Input);
-				Text.text = "?";
+				// Text.text = "?";
 				State = ModuleState.ENABLED;
 				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
 			} else if (num == expected) OnValidEntry(num);
 			else {
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
-				Text.text = Base36ToChar(num).ToString();
+				// Text.text = Base36ToChar(num).ToString();
 				State = ModuleState.ENABLED;
 				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
 			}
+			Symbols.Hide = true;
 		} else {
 			Audio.PlaySoundAtTransform(INPUT_SOUND, transform);
-			Text.text = Input;
+			Symbols.CreateSymbol(Color.white);
 		}
 	}
 
 	private void OnValidEntry(int num) {
 		if (Info.bhInfo != null) Info.bhInfo.LastProcessedDigitsEntered = Info.bhInfo.DigitsEntered;
 		Log("Valid input: {0} ({1})", Base36ToChar(num), Input);
-		Text.text = "";
 		float passedTime = Time.time - ActivationTime;
 		int passedStagesAddition = passedTime < 60f ? 2 : 1;
 		PassedStagesCount += passedStagesAddition;
@@ -225,22 +224,26 @@ public class SMBHModule : ModuleScript {
 		if (State == ModuleState.ENABLED) {
 			Audio.PlaySoundAtTransform(INPUT_SOUND, transform);
 			Input = "h";
-			Text.text = Input;
-			Text.color = Color.white;
+			Symbols.Clear();
+			Symbols.Hide = false;
 		} else if (State == ModuleState.RELEASED) {
 			Input += "h";
-			Text.text = Input;
 		}
 		State = ModuleState.HELD;
+		Symbols.CreateSymbol(Color.blue);
 	}
 
 	private void OnRelease() {
 		if (IsSolved) return;
 		if (State == ModuleState.HELD) {
-			if (Input.Last() == 'h') Input = Input.SkipLast(1).Join("") + "t";
-			else Input += "r";
+			if (Input.Last() == 'h') {
+				Input = Input.SkipLast(1).Join("") + "t";
+				Symbols.ChangeLastSymbolColor(Color.green);
+			} else {
+				Input += "r";
+				Symbols.CreateSymbol(Color.red);
+			}
 			State = ModuleState.RELEASED;
-			Text.text = Input;
 		}
 	}
 
@@ -279,6 +282,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private void ActivateAccretionDisk() {
+		Symbols.Clear();
 		Audio.PlaySoundAtTransform(ACTIVATION_SOUND, transform);
 		ActivationTime = Time.time;
 		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();

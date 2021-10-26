@@ -26,6 +26,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1404649305727218
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 4917278526907376}
+  - component: {fileID: 114970398335242120}
+  m_Layer: 0
+  m_Name: Symbols
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1575386999581670
 GameObject:
   m_ObjectHideFlags: 1
@@ -267,6 +283,7 @@ Transform:
   - {fileID: 4199840303443246}
   - {fileID: 4261230443363280}
   - {fileID: 4739833461805874}
+  - {fileID: 4917278526907376}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -312,6 +329,19 @@ Transform:
   m_Father: {fileID: 4739833461805874}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!4 &4917278526907376
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1404649305727218}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.015, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 4518232438127256}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &4925335270610768
 Transform:
   m_ObjectHideFlags: 1
@@ -552,6 +582,7 @@ MonoBehaviour:
   BombInfo: {fileID: 114834488669949776}
   BossModule: {fileID: 114865020882040028}
   Audio: {fileID: 114034211471766636}
+  Symbols: {fileID: 114970398335242120}
 --- !u!114 &114119780502958410
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -710,6 +741,29 @@ MonoBehaviour:
   ModuleType: smbh
   ModuleDisplayName: SMBH
   RequiresTimerVisibility: 1
+--- !u!114 &114970398335242120
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1404649305727218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f55e3a5b70617c44fa8caa7c968a77e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Textures:
+  - {fileID: 2800000, guid: 92aed4734b2a61a46a4b2879f4ee81ca, type: 3}
+  - {fileID: 2800000, guid: 965c8f62c9137404880c26bb748bad92, type: 3}
+  - {fileID: 2800000, guid: d9dde3952a4fd22489acf01722a6dccf, type: 3}
+  - {fileID: 2800000, guid: e2b228fb7a96519448518ff3c9062725, type: 3}
+  - {fileID: 2800000, guid: 256928e616a4a0a4d9fd49105205e800, type: 3}
+  - {fileID: 2800000, guid: af75dfea3b50b244cbde42a4c892f6a4, type: 3}
+  - {fileID: 2800000, guid: 6e5ebf04dc7828d40a6c193daf2fb772, type: 3}
+  - {fileID: 2800000, guid: 7b454bcb1746e954ab9a88568e177f26, type: 3}
+  SymbolPrefab: {fileID: 114843418840842318, guid: fb9d2785e9d50ab489b1e48a54c0c088,
+    type: 2}
+  Hide: 1
 --- !u!114 &114971774299559096
 MonoBehaviour:
   m_ObjectHideFlags: 1
