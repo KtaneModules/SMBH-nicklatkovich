@@ -72,6 +72,7 @@ public class SMBHModule : ModuleScript {
 	public KMBossModule BossModule;
 	public KMAudio Audio;
 	public SymbolsContainer Symbols;
+	public DigitComponent Digit;
 
 	public bool AccretionDiskActive { get { return State == ModuleState.ENABLED || State == ModuleState.HELD || State == ModuleState.RELEASED; } }
 
@@ -146,13 +147,13 @@ public class SMBHModule : ModuleScript {
 			int expected = CalculateValidAnswer() % 36;
 			if (num < 0) {
 				Log("Unknown code entered: {0}", Input);
-				// Text.text = "?";
+				Digit.ProcessNewCharacter('?', false);
 				State = ModuleState.ENABLED;
 				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
 			} else if (num == expected) OnValidEntry(num);
 			else {
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
-				// Text.text = Base36ToChar(num).ToString();
+				Digit.ProcessNewCharacter(Base36ToChar(num), false);
 				State = ModuleState.ENABLED;
 				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
 			}
@@ -165,7 +166,9 @@ public class SMBHModule : ModuleScript {
 
 	private void OnValidEntry(int num) {
 		if (Info.bhInfo != null) Info.bhInfo.LastProcessedDigitsEntered = Info.bhInfo.DigitsEntered;
-		Log("Valid input: {0} ({1})", Base36ToChar(num), Input);
+		char c = Base36ToChar(num);
+		Log("Valid input: {0} ({1})", c, Input);
+		Digit.ProcessNewCharacter(c, true);
 		float passedTime = Time.time - ActivationTime;
 		int passedStagesAddition = passedTime < 60f ? 2 : 1;
 		PassedStagesCount += passedStagesAddition;

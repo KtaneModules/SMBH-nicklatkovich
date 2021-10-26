@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class SymbolsContainer : MonoBehaviour {
 	public const int SYMBOLS_COUNT = 8;
-	public const float SYMBOLS_RADIUS = 0.02f;
+	public const float SYMBOLS_RADIUS = 0.015f;
 	public const float ACTIVE_SCALE = 2f;
 
 	public Texture[] Textures;
@@ -63,6 +63,7 @@ public class SymbolsContainer : MonoBehaviour {
 	private void Update() {
 		if (Hide) Scale = Mathf.Max(0f, Scale - Time.deltaTime * ACTIVE_SCALE);
 		else Scale = ACTIVE_SCALE;
+		Angle += 0.2f * Time.deltaTime;
 	}
 
 	private void UpdateAngle() {
