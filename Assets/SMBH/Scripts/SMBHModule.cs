@@ -5,6 +5,7 @@ using UnityEngine;
 using KeepCoding;
 using KModkit;
 
+using KMAudioRef = KMAudio.KMAudioRef;
 using AccretionDiskType = SMBHUtils.AccretionDiskType;
 using SMBHBombInfo = BHReflector.SMBHBombInfo;
 
@@ -67,9 +68,11 @@ public class SMBHModule : ModuleScript {
 	public EventHorizonComponent EventHorizon;
 	public KMBombInfo BombInfo;
 	public KMBossModule BossModule;
+	public KMAudio Audio;
 
 	public bool AccretionDiskActive { get { return State == ModuleState.ENABLED || State == ModuleState.HELD || State == ModuleState.RELEASED; } }
 
+	private KMAudioRef AudioRef;
 	private bool AccretionDiskActivated = false;
 	private int StartingTimeInMinutes;
 	private ModuleState State = ModuleState.DISABLED;
@@ -118,9 +121,8 @@ public class SMBHModule : ModuleScript {
 	}
 
 	public bool CanActivate() {
-		if (Info == null) return true;
-		if (BombInfo.GetUnsolvedModuleIDs().Count(m => m == BHReflector.BLACK_HOLE_MODULE_ID) > 0) {
-			if (Info.DigitsEntered == Info.LastProcessedDigitsEntered) {
+		if (BombInfo.GetUnsolvedModuleIDs().Count(m => m == BHReflector.BLACK_HOLE_MODULE_ID) > 0 && Info.bhInfo != null) {
+			if (Info.bhInfo.DigitsEntered == Info.bhInfo.LastProcessedDigitsEntered) {
 				Log("Last processed Black Hole digit already processed. Activation delayed");
 				return false;
 			}
@@ -137,15 +139,20 @@ public class SMBHModule : ModuleScript {
 		if (State == ModuleState.DISABLED || State == ModuleState.ENABLED) return;
 		Input += "-";
 		if (Input.Length > 1 && Input.TakeLast(2).All(c => c == '-') && Input.LastIndexOf('r') >= Input.LastIndexOf('h')) {
+			if (AudioRef != null) {
+				AudioRef.StopSound();
+				AudioRef = null;
+			}
 			Input = Input.SkipLast(2).Join("");
 			int num = SMBHUtils.ParseBHCode(Input, RuleSeed.Seed);
 			int expected = CalculateValidAnswer() % 36;
 			if (num < 0) {
+				AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", transform);
 				Log("Unknown code entered: {0}", Input);
 				Text.text = "?";
 				State = ModuleState.ENABLED;
 			} else if (num == expected) {
-				if (Info != null) Info.LastProcessedDigitsEntered = Info.DigitsEntered.Value;
+				if (Info.bhInfo != null) Info.bhInfo.LastProcessedDigitsEntered = Info.bhInfo.DigitsEntered;
 				Log("Valid input: {0} ({1})", Base36ToChar(num), Input);
 				Text.text = "";
 				float passedTime = Time.time - ActivationTime;
@@ -159,12 +166,19 @@ public class SMBHModule : ModuleScript {
 					Log("Module solved");
 					EventHorizon.Solved = true;
 					Solve();
+					Audio.PlaySoundAtTransform("Solved", transform);
 				} else {
 					State = ModuleState.DISABLED;
 					CalculateActivationTime();
 					TargetAccretionDiskAlpha = 0f;
+					Audio.PlaySoundAtTransform("ValidEntry", transform);
+				}
+				foreach (SMBHModule m in Info.Modules) {
+					if (!m.AccretionDiskActivated) continue;
+					m.AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", m.transform);
 				}
 			} else {
+				AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", transform);
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
 				Text.text = Base36ToChar(num).ToString();
 				State = ModuleState.ENABLED;
@@ -208,6 +222,12 @@ public class SMBHModule : ModuleScript {
 		if (IsSolved) return;
 		if (State == ModuleState.DISABLED) return;
 		if (State == ModuleState.ENABLED) {
+			foreach (SMBHModule m in Info.Modules) {
+				if (m.AudioRef == null) continue;
+				m.AudioRef.StopSound();
+				m.AudioRef = null;
+			}
+			AudioRef = Audio.PlaySoundAtTransformWithRef("StartInput", transform);
 			Input = "h";
 			Text.text = Input;
 			Text.color = Color.white;
@@ -263,6 +283,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private void ActivateAccretionDisk() {
+		if (Info.Modules.All(m => m.AudioRef == null)) AudioRef = Audio.PlaySoundAtTransformWithRef("Activated", transform);
 		ActivationTime = Time.time;
 		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
 		float rotationSpeed = Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom();
@@ -319,9 +340,8 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private int CalculateValidAnswer() {
-		if (BombInfo.GetUnsolvedModuleIDs().Any(m => m == BHReflector.BLACK_HOLE_MODULE_ID) && Info != null) {
-			int? digitsEntered = Info.DigitsEntered;
-			if (digitsEntered != null) return Info.SolutionCode.Take(digitsEntered.Value).Sum();
+		if (BombInfo.GetUnsolvedModuleIDs().Any(m => m == BHReflector.BLACK_HOLE_MODULE_ID) && Info.bhInfo != null) {
+			return Info.bhInfo.SolutionCode.Take(Info.bhInfo.DigitsEntered).Sum();
 		}
 		if (DiskType == AccretionDiskType.SOLID) {
 			Color cl = AccretionDiskColors[0];

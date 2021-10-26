@@ -10,14 +10,18 @@ using Type = System.Type;
 public static class BHReflector {
 	public const string BLACK_HOLE_MODULE_ID = "BlackHoleModule";
 
-	public class SMBHBombInfo {
-		public HashSet<SMBHModule> Modules;
-		public int BHsCount;
+	public sealed class BHIntegrationInfo {
 		public object BHBombInfo;
 		public FieldInfo DigitsEnteredField;
 		public List<int> SolutionCode;
-		public int? DigitsEntered { get { return DigitsEnteredField.GetValue(BHBombInfo) as int?; } }
+		public int DigitsEntered { get { return (DigitsEnteredField.GetValue(BHBombInfo) as int?).Value; } }
 		public int LastProcessedDigitsEntered = -1;
+	}
+
+	public sealed class SMBHBombInfo {
+		public HashSet<SMBHModule> Modules;
+		public int BHsCount;
+		public BHIntegrationInfo bhInfo;
 	}
 
 	private static Dictionary<string, SMBHBombInfo> BHBombInfos = new Dictionary<string, SMBHBombInfo>();
@@ -30,24 +34,25 @@ public static class BHReflector {
 			result.Modules.Add(smbh);
 			return result;
 		}
+		result = new SMBHBombInfo();
 		int modulesCount = smbh.transform.parent.childCount;
 		IEnumerable<KMBombModule> modules = Enumerable.Range(0, modulesCount).Select(i => (
 			smbh.transform.parent.GetChild(i).GetComponent<KMBombModule>()
 		)).Where(m => m != null);
 		KMBombModule[] bhs = modules.Where(m => m.ModuleType == BLACK_HOLE_MODULE_ID).ToArray();
-		KMBombModule bh = bhs.FirstOrDefault();
-		result = ExtractInfoFromBHModule(bh);
-		if (result != null) {
-			result.Modules = new HashSet<SMBHModule>() { smbh };
-			result.BHsCount = bhs.Length;
+		if (bhs.Length > 0) {
+			KMBombModule bh = bhs.FirstOrDefault();
+			result.bhInfo = ExtractInfoFromBHModule(bh);
 		}
+		result.Modules = new HashSet<SMBHModule>() { smbh };
+		result.BHsCount = bhs.Length;
 		BHBombInfos[serial] = result;
 		smbh.BombInfo.OnBombExploded += () => BHBombInfos.Remove(serial);
 		smbh.BombInfo.OnBombSolved += () => BHBombInfos.Remove(serial);
 		return result;
 	}
 
-	private static SMBHBombInfo ExtractInfoFromBHModule(KMBombModule bh) {
+	private static BHIntegrationInfo ExtractInfoFromBHModule(KMBombModule bh) {
 		if (bh == null) return null;
 		Component comp = bh.GetComponent("BlackHoleModule");
 		if (comp == null) return null;
@@ -63,7 +68,7 @@ public static class BHReflector {
 		if (solutionCodeField == null) return null;
 		List<int> solutionCode = solutionCodeField.GetValue(originalInfo) as List<int>;
 		if (solutionCode == null) return null;
-		SMBHBombInfo result = new SMBHBombInfo();
+		BHIntegrationInfo result = new BHIntegrationInfo();
 		result.BHBombInfo = originalInfo;
 		result.DigitsEnteredField = digitsEnteredField;
 		result.SolutionCode = solutionCode;

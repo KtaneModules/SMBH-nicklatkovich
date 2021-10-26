@@ -551,6 +551,7 @@ MonoBehaviour:
   EventHorizon: {fileID: 114971774299559096}
   BombInfo: {fileID: 114834488669949776}
   BossModule: {fileID: 114865020882040028}
+  Audio: {fileID: 114034211471766636}
 --- !u!114 &114119780502958410
 MonoBehaviour:
   m_ObjectHideFlags: 1
