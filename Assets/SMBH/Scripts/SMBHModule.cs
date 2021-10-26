@@ -21,6 +21,8 @@ public class SMBHModule : ModuleScript {
 	public const float MAX_RADIUS = 0.05f;
 	public const float MIN_ACTIVATION_TIMEOUT = 2f;
 	public const string ACTIVATION_SOUND = "Activated";
+	public const string FAILURE_SOUND = "Failure";
+	public const string INPUT_SOUND = "Input";
 	public static readonly Color[] COLORS = SMBHUtils.COLORS;
 	public static readonly Dictionary<string, float> TWO_RINGS = new Dictionary<string, float> {
 		{ "_Color_0_Min", 0.6f },
@@ -74,7 +76,6 @@ public class SMBHModule : ModuleScript {
 
 	public bool AccretionDiskActive { get { return State == ModuleState.ENABLED || State == ModuleState.HELD || State == ModuleState.RELEASED; } }
 
-	private KMAudioRef AudioRef;
 	private bool AccretionDiskActivated = false;
 	private int StartingTimeInMinutes;
 	private ModuleState State = ModuleState.DISABLED;
@@ -141,26 +142,25 @@ public class SMBHModule : ModuleScript {
 		if (State == ModuleState.DISABLED || State == ModuleState.ENABLED) return;
 		Input += "-";
 		if (Input.Length > 1 && Input.TakeLast(2).All(c => c == '-') && Input.LastIndexOf('r') >= Input.LastIndexOf('h')) {
-			if (AudioRef != null) {
-				AudioRef.StopSound();
-				AudioRef = null;
-			}
 			Input = Input.SkipLast(2).Join("");
 			int num = SMBHUtils.ParseBHCode(Input, RuleSeed.Seed);
 			int expected = CalculateValidAnswer() % 36;
 			if (num < 0) {
-				AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, transform);
 				Log("Unknown code entered: {0}", Input);
 				Text.text = "?";
 				State = ModuleState.ENABLED;
+				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
 			} else if (num == expected) OnValidEntry(num);
 			else {
-				AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, transform);
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
 				Text.text = Base36ToChar(num).ToString();
 				State = ModuleState.ENABLED;
+				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
 			}
-		} else Text.text = Input;
+		} else {
+			Audio.PlaySoundAtTransform(INPUT_SOUND, transform);
+			Text.text = Input;
+		}
 	}
 
 	private void OnValidEntry(int num) {
@@ -184,10 +184,6 @@ public class SMBHModule : ModuleScript {
 			CalculateActivationTime();
 			TargetAccretionDiskAlpha = 0f;
 			Audio.PlaySoundAtTransform("ValidEntry", transform);
-		}
-		foreach (SMBHModule m in Info.Modules) {
-			if (!m.AccretionDiskActivated) continue;
-			m.AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, m.transform);
 		}
 	}
 
@@ -227,12 +223,7 @@ public class SMBHModule : ModuleScript {
 		if (IsSolved) return;
 		if (State == ModuleState.DISABLED) return;
 		if (State == ModuleState.ENABLED) {
-			foreach (SMBHModule m in Info.Modules) {
-				if (m.AudioRef == null) continue;
-				m.AudioRef.StopSound();
-				m.AudioRef = null;
-			}
-			AudioRef = Audio.PlaySoundAtTransformWithRef("StartInput", transform);
+			Audio.PlaySoundAtTransform(INPUT_SOUND, transform);
 			Input = "h";
 			Text.text = Input;
 			Text.color = Color.white;
@@ -288,7 +279,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private void ActivateAccretionDisk() {
-		if (Info.Modules.All(m => m.AudioRef == null)) AudioRef = Audio.PlaySoundAtTransformWithRef(ACTIVATION_SOUND, transform);
+		Audio.PlaySoundAtTransform(ACTIVATION_SOUND, transform);
 		ActivationTime = Time.time;
 		Renderer AccretionDiskRenderer = AccretionDisk.GetComponent<Renderer>();
 		float rotationSpeed = Random.Range(1f, 2f) * new[] { 1f, -1f }.PickRandom();
