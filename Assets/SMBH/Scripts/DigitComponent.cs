@@ -17,6 +17,9 @@ public class DigitComponent : MonoBehaviour {
 	private bool _valid;
 	public bool Valid { get { return _valid; } set { if (_valid == value) return; _valid = value; UpdateColor(); } }
 
+	private bool _bonus;
+	public bool Bonus { get { return _bonus; } set { if (_bonus == value) return; _bonus = value; UpdateColor(); } }
+
 	private float _scaleSpeed;
 	private float _angleSpeed;
 	private float _fadeSpeed;
@@ -26,7 +29,7 @@ public class DigitComponent : MonoBehaviour {
 		UpdateAngle();
 	}
 
-	public void ProcessNewCharacter(char c, bool valid) {
+	public void ProcessNewCharacter(char c, bool valid, bool bonus) {
 		_valid = valid;
 		_angleSpeed = valid ? ROTATION_SPEED : 0;
 		Angle = valid ? -ROTATION_SPEED / 2f : 0f;
@@ -52,6 +55,7 @@ public class DigitComponent : MonoBehaviour {
 	}
 
 	private void UpdateColor() {
-		Text.color = _valid ? new Color(0, 1f * _fade, 0, 1f) : new Color(1f * _fade, 0, 0, 1f);
+		float bonusRB = _valid && _bonus ? _fade : 0;
+		Text.color = _valid ? new Color(bonusRB, _fade, bonusRB, 1f) : new Color(_fade, 0, 0, 1f);
 	}
 }

@@ -114,14 +114,14 @@ public class SMBHModule : ModuleScript {
 			int expected = CalculateValidAnswer() % 36;
 			if (num < 0) {
 				Log("Unknown code entered: {0}", Input);
-				Digit.ProcessNewCharacter('?', false);
+				Digit.ProcessNewCharacter('?', false, false);
 				State = ModuleState.ENABLED;
 				LastInputTime = Time.time;
 				Strike();
 			} else if (num == expected) OnValidEntry(num);
 			else {
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
-				Digit.ProcessNewCharacter(Base36ToChar(num), false);
+				Digit.ProcessNewCharacter(Base36ToChar(num), false, false);
 				State = ModuleState.ENABLED;
 				LastInputTime = Time.time;
 				Strike();
@@ -137,9 +137,9 @@ public class SMBHModule : ModuleScript {
 		if (Info.bhInfo != null) Info.bhInfo.LastProcessedDigitsEntered = Info.bhInfo.DigitsEntered;
 		char c = Base36ToChar(num);
 		Log("Valid input: {0} ({1})", c, Input);
-		Digit.ProcessNewCharacter(c, true);
 		float passedTime = Time.time - ActivationTime;
 		int passedStagesAddition = passedTime < 60f ? 2 : 1;
+		Digit.ProcessNewCharacter(c, true, PassedStagesCount > 1);
 		PassedStagesCount += passedStagesAddition;
 		Log("Stage passed in {0} seconds. Passed stages +{1} ({2})", Mathf.Ceil(passedTime), passedStagesAddition, PassedStagesCount);
 		if (PassedStagesCount >= STAGES_COUNT) {
