@@ -43,6 +43,7 @@ public class SMBHModule : ModuleScript {
 	public SymbolsContainer Symbols;
 	public DigitComponent Digit;
 	public AccretionDiskComponent AccretionDisk;
+	public StatusLightsContainer StatusLights;
 
 	public bool AtInputStage { get { return !IsSolved && new[] { ModuleState.HELD, ModuleState.RELEASED }.Contains(State); } }
 
@@ -139,7 +140,8 @@ public class SMBHModule : ModuleScript {
 		Log("Valid input: {0} ({1})", c, Input);
 		float passedTime = Time.time - ActivationTime;
 		int passedStagesAddition = passedTime < 60f ? 2 : 1;
-		Digit.ProcessNewCharacter(c, true, PassedStagesCount > 1);
+		Digit.ProcessNewCharacter(c, true, passedStagesAddition > 1);
+		for (int i = 0; i < passedStagesAddition; i++) StatusLights.Lit();
 		PassedStagesCount += passedStagesAddition;
 		Log("Stage passed in {0} seconds. Passed stages +{1} ({2})", Mathf.Ceil(passedTime), passedStagesAddition, PassedStagesCount);
 		if (PassedStagesCount >= STAGES_COUNT) {
