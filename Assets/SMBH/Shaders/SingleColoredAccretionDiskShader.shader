@@ -4,7 +4,7 @@
 		_Noise_1 ("Noise 1", 2D) = "white" {}
 		_Noise_2 ("Noise 2", 2D) = "white" {}
 		_Rotation_Speed ("Rotation Speed", float) = 1.5
-		_Color ("Color", Color) = (1, 0.5 ,0)
+		_Color_0 ("Color", Color) = (1, 0.5 ,0)
 		_Alpha ("Alpha", Float) = 1.0
 		_Event_Horizon_Color ("Event Horizon Color", Color) = (0, 0, 0)
 	}
@@ -43,7 +43,7 @@
 			sampler2D _Noise_1;
 			sampler2D _Noise_2;
 			float _Rotation_Speed;
-			float4 _Color;
+			float4 _Color_0;
 			float _Alpha;
 			float4 _Event_Horizon_Color;
 			float4 _Noise_0_ST;
@@ -67,7 +67,7 @@
 				float a_2 = (n_2.r + n_2.g + n_2.b) / 3.0;
 				float b = sin(pos.y * PI / 2);
 				float a = (a_0 + a_1 + a_2) / 3.0 * min(1.0, pos.y * 5.0) * min(1.0, (1.0 - pos.y) * 5.0);
-				return float4(lerp(_Event_Horizon_Color, _Color.rgb, lerp(1.0, a, b)), lerp(a, 1.0, b) * _Alpha);
+				return float4(lerp(_Event_Horizon_Color, _Color_0.rgb, lerp(1.0, a, b)), lerp(a, 1.0, b) * _Alpha);
 			}
 			ENDCG
 		}

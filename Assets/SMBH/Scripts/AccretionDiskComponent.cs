@@ -71,7 +71,10 @@ public class AccretionDiskComponent : MonoBehaviour {
 
 	private void Start() {
 		Active = false;
-		Colors = new[] { Color.black };
+		// magenta is unused to make first color always update
+		Colors = new[] { Color.magenta };
+		// this variable should equals shader type in inspector
+		Type = AccretionDiskType.SECTORS;
 		_accretionDiskMesh = AccretionDiskMeshFilter.mesh;
 		CreateAccretionDisk();
 		UpdateAlpha();

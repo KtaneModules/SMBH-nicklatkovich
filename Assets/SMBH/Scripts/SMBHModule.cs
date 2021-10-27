@@ -44,6 +44,8 @@ public class SMBHModule : ModuleScript {
 	public DigitComponent Digit;
 	public AccretionDiskComponent AccretionDisk;
 
+	public bool AtInputStage { get { return !IsSolved && new[] { ModuleState.HELD, ModuleState.RELEASED }.Contains(State); } }
+
 	private int StartingTimeInMinutes;
 	private ModuleState State = ModuleState.DISABLED;
 	private int PassedStagesCount = 0;
@@ -53,7 +55,9 @@ public class SMBHModule : ModuleScript {
 	private string Input = "";
 	private HashSet<string> IgnoreList;
 	private SMBHBombInfo Info;
-
+	private float LastActivationTime = 0f;
+	private float LastInputTime = 0f;
+	private float SolveTime = 0f;
 
 	private void Start() {
 		EventHorizon.transform.localScale = 2 * AccretionDiskComponent.EVENT_HORIZON_RADIUS * Vector3.one;
@@ -77,16 +81,26 @@ public class SMBHModule : ModuleScript {
 	}
 
 	public bool CanActivate() {
+		bool result = true;
 		if (BombInfo.GetUnsolvedModuleIDs().Count(m => m == BHReflector.BLACK_HOLE_MODULE_ID) > 0 && Info.bhInfo != null) {
 			if (Info.bhInfo.DigitsEntered == Info.bhInfo.LastProcessedDigitsEntered) {
 				Log("Last processed Black Hole digit already processed. Activation delayed");
 				return false;
 			}
-			bool result = Info.Modules.All(m => !m.AccretionDisk.Active);
+			result = Info.Modules.All(m => !m.AccretionDisk.Active);
 			if (!result) Log("Another SMBH waiting for Black Hole digits sum. Activation delayed");
-			return result;
 		}
-		return true;
+		if (result) {
+			SMBHModule[] otherSMBHs = Info.Modules.Where(m => m != this).ToArray();
+			result = otherSMBHs.All(m => {
+				if (m.AtInputStage) return false;
+				if (Time.time - m.LastActivationTime < 1f) return false;
+				if (Time.time - m.LastInputTime < 1f) return false;
+				if (Time.time - m.SolveTime < 2f) return false;
+				return true;
+			});
+		}
+		return result;
 	}
 
 	public override void OnTimerTick() {
@@ -102,12 +116,14 @@ public class SMBHModule : ModuleScript {
 				Log("Unknown code entered: {0}", Input);
 				Digit.ProcessNewCharacter('?', false);
 				State = ModuleState.ENABLED;
+				LastInputTime = Time.time;
 				Strike();
 			} else if (num == expected) OnValidEntry(num);
 			else {
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
 				Digit.ProcessNewCharacter(Base36ToChar(num), false);
 				State = ModuleState.ENABLED;
+				LastInputTime = Time.time;
 				Strike();
 			}
 			Symbols.Hide = true;
@@ -133,11 +149,13 @@ public class SMBHModule : ModuleScript {
 			AccretionDisk.Solved = true;
 			Solve();
 			Audio.PlaySoundAtTransform("Solved", transform);
+			SolveTime = Time.time;
 		} else {
 			State = ModuleState.DISABLED;
 			CalculateActivationTime();
 			AccretionDisk.Active = false;
 			Audio.PlaySoundAtTransform("ValidEntry", transform);
+			LastInputTime = Time.time;
 		}
 	}
 
@@ -204,6 +222,7 @@ public class SMBHModule : ModuleScript {
 
 
 	private void ActivateAccretionDisk() {
+		LastActivationTime = Time.time;
 		Symbols.Clear();
 		Audio.PlaySoundAtTransform(ACTIVATION_SOUND, transform);
 		ActivationTime = Time.time;

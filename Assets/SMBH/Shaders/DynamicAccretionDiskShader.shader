@@ -88,7 +88,8 @@
 				float b = sin(pos.y * PI / 2);
 				float a = (a_0 + a_1 + a_2) / 3.0 * min(1.0, pos.y * 5.0) * min(1.0, (1.0 - pos.y) * 5.0);
 				float3 col;
-				float xx = fract(_Dynamic_Speed * _Time.y);
+				float dist = abs(fract(abs(pos.x + 0.3 * _Time.y - _Time.y)) - 0.5);
+				float xx = fract(_Dynamic_Speed * (_Time.y + dist));
 				if (xx >= _Color_0_Min) col = _Color_0.rgb;
 				else if (xx > _Color_1_Max) col = lerp(_Color_1, _Color_0, (xx - _Color_1_Max) / (_Color_0_Min - _Color_1_Max)).rgb;
 				else if (xx >= _Color_1_Min) col = _Color_1.rgb;
