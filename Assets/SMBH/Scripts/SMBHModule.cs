@@ -14,7 +14,7 @@ public class SMBHModule : ModuleScript {
 		public string Voltage { get; set; }
 	}
 
-	public const int STAGES_COUNT = 4;
+	public const int STAGES_COUNT = 12;
 	public const float MIN_ACTIVATION_TIMEOUT = 2f;
 	public const string ACTIVATION_SOUND = "Activated";
 	public const string FAILURE_SOUND = "Failure";
