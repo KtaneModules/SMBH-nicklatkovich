@@ -14,7 +14,10 @@ MonoBehaviour:
   id: smbh
   title: Supermassive Black Hole
   author: NickLatkovich
-  description: '-'
-  version: 0.1.0
+  description: "Throw a sequence of base-36 digits into a supermassive black hole
+    based on its accretion disk. Supermassive Black Hole has integration with regular
+    Black Hole.\r\n\r\nRule Seed: Supported (code synced with rule seed of regular
+    Black Hole);\r\nTwitch Plays: Coming Soon"
+  version: 1.0.0
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: b30a9cde97604bd47aa53e89e013a00a, type: 3}

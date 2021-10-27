@@ -149,13 +149,13 @@ public class SMBHModule : ModuleScript {
 				Log("Unknown code entered: {0}", Input);
 				Digit.ProcessNewCharacter('?', false);
 				State = ModuleState.ENABLED;
-				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
+				Strike();
 			} else if (num == expected) OnValidEntry(num);
 			else {
 				Log("Input: {0} ({1}). Expected: {2} ({3})", Base36ToChar(num), Input, Base36ToChar(expected), SMBHUtils.GetBHSCII(expected, RuleSeed.Seed));
 				Digit.ProcessNewCharacter(Base36ToChar(num), false);
 				State = ModuleState.ENABLED;
-				Audio.PlaySoundAtTransform(FAILURE_SOUND, transform);
+				Strike();
 			}
 			Symbols.Hide = true;
 		} else {

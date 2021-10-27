@@ -38,6 +38,7 @@ GameObject:
   - component: {fileID: 33961407801292986}
   - component: {fileID: 64607760810753086}
   - component: {fileID: 23733867888339432}
+  - component: {fileID: 114341584119058252}
   m_Layer: 0
   m_Name: Plane
   m_TagString: Untagged
@@ -127,6 +128,19 @@ MeshCollider:
   m_CookingOptions: 14
   m_SkinWidth: 0.01
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &114341584119058252
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1993098889233502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1005838349, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShaderNames:
+  - Black Hole/Symbol
 --- !u!114 &114843418840842318
 MonoBehaviour:
   m_ObjectHideFlags: 1

@@ -160,6 +160,7 @@ GameObject:
   - component: {fileID: 4913628293499478}
   - component: {fileID: 23592824268184508}
   - component: {fileID: 102363769756420546}
+  - component: {fileID: 114201126431703730}
   m_Layer: 0
   m_Name: Mesh
   m_TagString: Untagged
@@ -467,7 +468,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
+  - {fileID: 2100000, guid: e2bdfa7a4bd0b7d499aedbd9c442d773, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -573,7 +574,7 @@ TextMesh:
   m_FontSize: 256
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Font: {fileID: 12800000, guid: 7875eebc1735b3742bd7bd55a7c735d8, type: 3}
   m_Color:
     serializedVersion: 2
     rgba: 4294967295
@@ -626,6 +627,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShaderNames:
   - Unlit/Color
+--- !u!114 &114201126431703730
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1869898214247180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1005838349, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShaderNames:
+  - GUI/Text Shader
 --- !u!114 &114237254221335744
 MonoBehaviour:
   m_ObjectHideFlags: 1
