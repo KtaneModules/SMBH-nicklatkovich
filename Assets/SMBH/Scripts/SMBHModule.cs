@@ -134,12 +134,16 @@ public class SMBHModule : ModuleScript {
 		}
 	}
 
+	public bool HasUnsolvedBlackHoleModules() {
+		return BombInfo.GetUnsolvedModuleIDs().Any(m => m == BHReflector.BLACK_HOLE_MODULE_ID) && Info.bhInfo != null;
+	}
+
 	private void OnValidEntry(int num) {
 		if (Info.bhInfo != null) Info.bhInfo.LastProcessedDigitsEntered = Info.bhInfo.DigitsEntered;
 		char c = Base36ToChar(num);
 		Log("Valid input: {0} ({1})", c, Input);
 		float passedTime = Time.time - ActivationTime;
-		int passedStagesAddition = passedTime < 60f ? 2 : 1;
+		int passedStagesAddition = passedTime < 60f ? (HasUnsolvedBlackHoleModules() ? 3 : 2) : 1;
 		Digit.ProcessNewCharacter(c, true, passedStagesAddition > 1);
 		for (int i = 0; i < passedStagesAddition; i++) StatusLights.Lit();
 		PassedStagesCount += passedStagesAddition;
@@ -234,9 +238,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private int CalculateValidAnswer() {
-		if (BombInfo.GetUnsolvedModuleIDs().Any(m => m == BHReflector.BLACK_HOLE_MODULE_ID) && Info.bhInfo != null) {
-			return Info.bhInfo.SolutionCode.Take(Info.bhInfo.DigitsEntered).Sum();
-		}
+		if (HasUnsolvedBlackHoleModules()) return Info.bhInfo.SolutionCode.Take(Info.bhInfo.DigitsEntered).Sum();
 		if (AccretionDisk.Type == AccretionDiskType.SOLID) {
 			Color cl = AccretionDisk.Colors[0];
 			if (cl == SMBHUtils.ORANGE) return BombInfo.GetSolvedModuleIDs().Count;
