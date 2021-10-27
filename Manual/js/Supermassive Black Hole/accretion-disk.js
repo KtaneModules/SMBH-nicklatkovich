@@ -32,15 +32,15 @@ function createAccretionDisk(canvasId) {
 	}
 
 	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, loadTexture(gl, "img/SMBH/noise_0.png"));
+	gl.bindTexture(gl.TEXTURE_2D, loadTexture(gl, "img/Supermassive Black Hole/noise_0.png"));
 	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Noise_0"), 0);
 
 	gl.activeTexture(gl.TEXTURE1);
-	gl.bindTexture(gl.TEXTURE_2D, loadTexture(gl, "img/SMBH/noise_1.png"));
+	gl.bindTexture(gl.TEXTURE_2D, loadTexture(gl, "img/Supermassive Black Hole/noise_1.png"));
 	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Noise_1"), 1);
 
 	gl.activeTexture(gl.TEXTURE2);
-	gl.bindTexture(gl.TEXTURE_2D, loadTexture(gl, "img/SMBH/noise_2.png"));
+	gl.bindTexture(gl.TEXTURE_2D, loadTexture(gl, "img/Supermassive Black Hole/noise_2.png"));
 	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Noise_2"), 2);
 
 	timeLocation = gl.getUniformLocation(gl.program, "u_Time");

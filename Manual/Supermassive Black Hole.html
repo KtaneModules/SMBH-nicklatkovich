@@ -67,7 +67,7 @@
             gl_FragColor = vec4(0.0, 0.0, 0.0, lerp(a, 1.0, blackness));
         }
     </script>
-    <script src="js/SMBH/accretion-disk.js"></script>
+    <script src="js/Supermassive%20Black%20Hole/accretion-disk.js"></script>
     <script>
         const svgNS = "http://www.w3.org/2000/svg";
         const INTERVAL_SIZE = 25;
@@ -330,7 +330,7 @@
         }
 
         .empty-cell {
-            background-image: url("img/SMBH/empty-cell-bg.png");
+            background-image: url("img/Supermassive Black Hole/empty-cell-bg.png");
         }
 
         #single-colored-table td:first-child {
@@ -352,7 +352,8 @@
             </div>
             <div class="page-content">
                 <div class="diagram" style="position: relative;">
-                    <img src="img/Component/SMBH.svg" style="position: relative;">
+                    <img src="img/Component/Supermassive Black Hole.svg" style="position: relative;">
+                    <canvas id="accretion-disk" width="216" height="216" style="position: absolute; top: -25%; left: -25%; width: 150%; height: 150%;"></canvas>
                 </div>
                 <h2>On the Subject of SMBH</h2>
                 <p class="flavour-text">Newton’s third law. You gotta leave something behind.</p>
