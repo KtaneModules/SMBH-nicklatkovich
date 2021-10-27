@@ -118,10 +118,12 @@ public static class SMBHUtils {
 	}
 
 	public static int GetThreeColorValue(Color[] colors, int rndSeed) {
+		Debug.Log(colors);
 		GetBHSCII(0, rndSeed);
 		char[] tmp = colors.Select(c => NameOfColor[c][0]).ToArray();
 		System.Array.Sort(tmp);
 		string clr = tmp.Join("");
+		Debug.Log(clr);
 		return ThreeColorTable[rndSeed][clr];
 	}
 

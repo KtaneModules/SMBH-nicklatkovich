@@ -127,6 +127,7 @@ GameObject:
   - component: {fileID: 33987819529477460}
   - component: {fileID: 23769909563001410}
   - component: {fileID: 114662576317764066}
+  - component: {fileID: 114690900344118426}
   m_Layer: 0
   m_Name: AccretionDisk
   m_TagString: Untagged
@@ -601,19 +602,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _editorRuleSeed: 1
-  SingleColoredAccretionDiskShader: {fileID: 4800000, guid: 0ba3b6e4585c4d848b75b2f3c0a10f07,
-    type: 3}
-  RingsColoredAccretionDiskShader: {fileID: 4800000, guid: deb9e3997b2cf4f45a3c5ceaca337281,
-    type: 3}
-  SectorsColoredAccretionDiskShader: {fileID: 4800000, guid: 2f37339d252eb084a8faa100adeadff9,
-    type: 3}
-  AccretionDisk: {fileID: 1829151077107772}
   EventHorizon: {fileID: 114971774299559096}
   BombInfo: {fileID: 114834488669949776}
   BossModule: {fileID: 114865020882040028}
   Audio: {fileID: 114034211471766636}
   Symbols: {fileID: 114970398335242120}
   Digit: {fileID: 114875468031353686}
+  AccretionDisk: {fileID: 114690900344118426}
 --- !u!114 &114119780502958410
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -639,7 +634,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShaderNames:
-  - GUI/Text Shader
+  - GUI/KT 3D Text Cull Off
 --- !u!114 &114237254221335744
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -689,6 +684,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShaderNames:
   - Accretion Disk/Sectors Colored Accretion Disk
+--- !u!114 &114690900344118426
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1829151077107772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8664014b6e151ec449d6fb4576033956, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AccretionDiskMeshFilter: {fileID: 33987819529477460}
+  AccretionDiskRenderer: {fileID: 23769909563001410}
+  SolidColorAccretionDiskShader: {fileID: 4800000, guid: 0ba3b6e4585c4d848b75b2f3c0a10f07,
+    type: 3}
+  RingsAccretionDiskShader: {fileID: 4800000, guid: deb9e3997b2cf4f45a3c5ceaca337281,
+    type: 3}
+  SectorsAccretionDiskShader: {fileID: 4800000, guid: 2f37339d252eb084a8faa100adeadff9,
+    type: 3}
+  DynamicAccretionDiskShader: {fileID: 4800000, guid: 14295b288415f3444aa6a64ff3463a24,
+    type: 3}
+  Active: 0
+  Type: 0
+  Colors: []
 --- !u!114 &114709621532374978
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -795,7 +814,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ModuleType: smbh
-  ModuleDisplayName: SMBH
+  ModuleDisplayName: Supermassive Black Hole
   RequiresTimerVisibility: 1
 --- !u!114 &114970398335242120
 MonoBehaviour:
