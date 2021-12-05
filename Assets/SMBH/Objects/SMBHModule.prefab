@@ -610,6 +610,7 @@ MonoBehaviour:
   Digit: {fileID: 114875468031353686}
   AccretionDisk: {fileID: 114690900344118426}
   StatusLights: {fileID: 114714319183128172}
+  TwitchPlaysActive: 0
 --- !u!114 &114119780502958410
 MonoBehaviour:
   m_ObjectHideFlags: 1
