@@ -24,6 +24,15 @@ public class StatusLightsContainer : MonoBehaviour {
 		_components = components.Shuffle();
 	}
 
+	public void ChangeLocationForTP() {
+		for (int quadrupletIndex = 0; quadrupletIndex < 3; quadrupletIndex++) {
+			for (int index = 0; index < 4; index++) {
+				float pos = Mathf.PI / 4 * 3 + quadrupletIndex * Mathf.PI / 2 + (index - 1.5f) * Mathf.PI / 32 / 1.5f;
+				_components[quadrupletIndex * 4 + index].transform.localPosition = new Vector3(RADIUS * Mathf.Cos(pos), 0, RADIUS * Mathf.Sin(pos));
+			}
+		}
+	}
+
 	public void Lit() {
 		if (litLights >= 12) return;
 		_components[litLights++].LightColor = Color.green;

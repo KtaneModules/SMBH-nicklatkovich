@@ -56,6 +56,8 @@ public class SMBHModule : ModuleScript {
 	public AccretionDiskComponent AccretionDisk;
 	public StatusLightsContainer StatusLights;
 
+	public bool TwitchPlaysActive;
+
 	public bool AtInputStage { get { return !IsSolved && new[] { ModuleState.HELD, ModuleState.RELEASED }.Contains(State); } }
 
 	private int StartingTimeInMinutes;
@@ -201,6 +203,7 @@ public class SMBHModule : ModuleScript {
 
 	public override void OnActivate() {
 		base.OnActivate();
+		if (TwitchPlaysActive) StatusLights.ChangeLocationForTP();
 		StartingTimeInMinutes = Mathf.FloorToInt(BombInfo.GetTime() / 60f);
 		CalculateActivationTime();
 		EventHorizon.Selectable.OnInteract += () => { OnHold(); return false; };
