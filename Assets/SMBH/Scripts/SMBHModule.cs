@@ -60,6 +60,7 @@ public class SMBHModule : ModuleScript {
 
 	public bool AtInputStage { get { return !IsSolved && new[] { ModuleState.HELD, ModuleState.RELEASED }.Contains(State); } }
 
+	private bool forceSolved = false;
 	private int StartingTimeInMinutes;
 	private ModuleState State = ModuleState.DISABLED;
 	private int PassedStagesCount = 0;
@@ -288,7 +289,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private IEnumerator ProcessTwitchCommand(string command) {
-		if (IsSolved || !IsActive) yield break;
+		if (IsSolved || !IsActive || forceSolved) yield break;
 		if (State != ModuleState.ENABLED) {
 			yield return "sendtochaterror {0}, !{1}: accretion disk not present";
 			yield break;
@@ -353,6 +354,7 @@ public class SMBHModule : ModuleScript {
 
 	public IEnumerator TwitchHandleForcedSolve() {
 		if (IsSolved) yield break;
+		forceSolved = true;
 		Log("Start module force solving");
 		if (State == ModuleState.DISABLED) ActivateAccretionDisk();
 		State = ModuleState.ENABLED;
