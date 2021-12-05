@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using UnityEngine;
 using KeepCoding;
@@ -30,6 +31,7 @@ public class SMBHModule : ModuleScript {
 	};
 
 	public readonly string TwitchHelpMessage = new[] {
+		"\"!{0} th-r\"",
 		"\"!{0} tap;hold;tick;release\"",
 		"\"!{0} click,down,wait,up\"",
 		"\"!{0} tap hold, wait; up\" - specify when to hold, release, tap, or wait for a timer tick in the correct order",
@@ -280,13 +282,15 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private IEnumerator ProcessTwitchCommand(string command) {
+		command = command.Trim().ToLower();
 		if (IsSolved) yield break;
+		if (Regex.IsMatch(command, @"^[th\-r]+$")) command = command.ToArray().Join(";");
 		List<TpAction> actions = new List<TpAction>() { TpAction.Tick };
 		foreach (string piece in command.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(str => str.Trim().ToLowerInvariant())) {
-			if (piece == "hold" || piece == "down") actions.Add(TpAction.Hold);
-			else if (piece == "release" || piece == "up") actions.Add(TpAction.Release);
-			else if (piece == "tap" || piece == "click") actions.AddRange(new[] { TpAction.Hold, TpAction.Release });
-			else if (piece == "tick" || piece == "wait") actions.Add(TpAction.Tick);
+			if (piece == "hold" || piece == "down" || piece == "h") actions.Add(TpAction.Hold);
+			else if (piece == "release" || piece == "up" || piece == "r") actions.Add(TpAction.Release);
+			else if (piece == "tap" || piece == "click" || piece == "t") actions.AddRange(new[] { TpAction.Hold, TpAction.Release });
+			else if (piece == "tick" || piece == "wait" || piece == "-") actions.Add(TpAction.Tick);
 			else yield break;
 		}
 		yield return null;
