@@ -82,8 +82,11 @@ public class AccretionDiskComponent : MonoBehaviour {
 
 	private void Update() {
 		Alpha = Mathf.Max(0, Mathf.Min(1, Alpha + (Active ? 1 : -1) * Time.deltaTime));
-		_accretionDiskMesh.vertices = CalculateAccretionDiskVertices();
 		EventHorizonGreenness = Mathf.Max(0, Mathf.Min(1, EventHorizonGreenness + (Solved ? 1 : -1) * Time.deltaTime));
+	}
+
+	private void OnWillRenderObject() {
+		_accretionDiskMesh.vertices = CalculateAccretionDiskVertices();
 	}
 
 	public void SetProps(AccretionDiskType type, Color[] colors, bool cw) {
@@ -175,7 +178,9 @@ public class AccretionDiskComponent : MonoBehaviour {
 	}
 
 	private Vector3[] CalculateAccretionDiskVertices() {
-		Vector3 localCamPos = transform.InverseTransformPoint(Camera.main.transform.position);
+		Camera camera = Camera.current;
+		if (camera == null) camera = Camera.main;
+		Vector3 localCamPos = transform.InverseTransformPoint(camera.transform.position);
 		Vector2 xzCamPosNorm = new Vector2(localCamPos.x, localCamPos.z).normalized;
 		float camAngle = Mathf.Atan2(localCamPos.z, localCamPos.x);
 		float camZAngle = localCamPos.y < 0 ? Mathf.PI / 2 : Mathf.PI / 2 - Mathf.Atan2(localCamPos.y, new Vector3(localCamPos.x, 0, localCamPos.z).magnitude);
