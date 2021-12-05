@@ -25,12 +25,14 @@ public class StatusLightsContainer : MonoBehaviour {
 	}
 
 	public void ChangeLocationForTP() {
+		float[] positions = new float[12];
 		for (int quadrupletIndex = 0; quadrupletIndex < 3; quadrupletIndex++) {
 			for (int index = 0; index < 4; index++) {
-				float pos = Mathf.PI / 4 * 3 + quadrupletIndex * Mathf.PI / 2 + (index - 1.5f) * Mathf.PI / 32 / 1.5f;
-				_components[quadrupletIndex * 4 + index].transform.localPosition = new Vector3(RADIUS * Mathf.Cos(pos), 0, RADIUS * Mathf.Sin(pos));
+				positions[quadrupletIndex * 4 + index] = Mathf.PI / 4 * 3 + quadrupletIndex * Mathf.PI / 2 + (index - 1.5f) * Mathf.PI / 32 / 1.5f;
 			}
 		}
+		positions = positions.Shuffle();
+		for (int i = 0; i < 12; i++) _components[i].transform.localPosition = new Vector3(RADIUS * Mathf.Cos(positions[i]), 0, RADIUS * Mathf.Sin(positions[i]));
 	}
 
 	public void Lit() {

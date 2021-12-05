@@ -161,21 +161,24 @@ public class SMBHModule : ModuleScript {
 		for (int i = 0; i < passedStagesAddition; i++) StatusLights.Lit();
 		PassedStagesCount += passedStagesAddition;
 		Log("Stage passed in {0} seconds. Passed stages +{1} ({2})", Mathf.Ceil(passedTime), passedStagesAddition, PassedStagesCount);
-		if (PassedStagesCount >= STAGES_COUNT) {
-			State = ModuleState.SOLVED;
-			Log("Module solved");
-			EventHorizon.Solved = true;
-			AccretionDisk.Solved = true;
-			Solve();
-			Audio.PlaySoundAtTransform("Solved", transform);
-			SolveTime = Time.time;
-		} else {
+		if (PassedStagesCount >= STAGES_COUNT) Solve();
+		else {
 			State = ModuleState.DISABLED;
 			CalculateActivationTime();
 			AccretionDisk.Active = false;
 			Audio.PlaySoundAtTransform("ValidEntry", transform);
 			LastInputTime = Time.time;
 		}
+	}
+
+	private void Solve() {
+		State = ModuleState.SOLVED;
+		Log("Module solved");
+		EventHorizon.Solved = true;
+		AccretionDisk.Solved = true;
+		base.Solve();
+		Audio.PlaySoundAtTransform("Solved", transform);
+		SolveTime = Time.time;
 	}
 
 	private void OnNoUnsolvedModules() {
@@ -336,7 +339,7 @@ public class SMBHModule : ModuleScript {
 				continue;
 			}
 			subactionsCount += 1;
-			if (subactionsCount >= 4) return "too many commands between two ticks";
+			if (subactionsCount > 4) return "too many commands between two ticks";
 			if (action == TpAction.Hold) {
 				if (held) return "unable to hold while held";
 				held = true;
@@ -346,5 +349,19 @@ public class SMBHModule : ModuleScript {
 			}
 		}
 		return null;
+	}
+
+	public IEnumerator TwitchHandleForcedSolve() {
+		if (IsSolved) yield break;
+		Log("Start module force solving");
+		if (State == ModuleState.DISABLED) ActivateAccretionDisk();
+		State = ModuleState.ENABLED;
+		yield return new WaitForSeconds(.2f);
+		for (int i = 0; i < STAGES_COUNT - PassedStagesCount; i++) {
+			StatusLights.Lit();
+			yield return new WaitForSeconds(.2f);
+		}
+		Solve();
+		yield return new WaitForSeconds(.2f);
 	}
 }
