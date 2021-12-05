@@ -1,15 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using UnityEngine;
 using KeepCoding;
 using KModkit;
-using Rnd = UnityEngine.Random;
 
+using StringSplitOptions = System.StringSplitOptions;
 using AccretionDiskType = SMBHUtils.AccretionDiskType;
 using SMBHBombInfo = BHReflector.SMBHBombInfo;
-using System;
-using System.Collections;
 
 public class SMBHModule : ModuleScript {
 	private class VoltData {
@@ -30,6 +29,12 @@ public class SMBHModule : ModuleScript {
 		{ AccretionDiskType.DYNAMIC, "Dynamic" },
 	};
 
+	public readonly string TwitchHelpMessage = new[] {
+		"\"!{0} tap;hold;tick;release\"",
+		"\"!{0} click,down,wait,up\"",
+		"\"!{0} tap hold, wait; up\" - specify when to hold, release, tap, or wait for a timer tick in the correct order",
+	}.Join(" | ");
+
 	private float? Voltage {
 		get {
 			List<string> query = Get<KMBombInfo>().QueryWidgets("volt", "");
@@ -38,6 +43,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private enum ModuleState { DISABLED, ENABLED, HELD, RELEASED, SOLVED }
+	private enum TpAction { Hold, Release, Tick }
 
 	public EventHorizonComponent EventHorizon;
 	public KMBombInfo BombInfo;
@@ -169,7 +175,7 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private void OnNoUnsolvedModules() {
-		ActivationTimeout = Rnd.Range(MIN_ACTIVATION_TIMEOUT, 5f);
+		ActivationTimeout = Random.Range(MIN_ACTIVATION_TIMEOUT, 5f);
 		Log("No unsolved modules. Next activation in {0} seconds", Mathf.Ceil(ActivationTimeout));
 	}
 
@@ -183,10 +189,10 @@ public class SMBHModule : ModuleScript {
 		int leftStages = STAGES_COUNT - PassedStagesCount;
 		float bombTime = BombInfo.GetTime() - 20f;
 		float avgLeft = bombTime / leftStages;
-		if (AveragePassingTime >= avgLeft) ActivationTimeout = Rnd.Range(MIN_ACTIVATION_TIMEOUT, Mathf.Max(5f, avgLeft));
+		if (AveragePassingTime >= avgLeft) ActivationTimeout = Random.Range(MIN_ACTIVATION_TIMEOUT, Mathf.Max(5f, avgLeft));
 		else {
 			float avg = (AveragePassingTime * PassedStagesCount + bombTime) / STAGES_COUNT;
-			ActivationTimeout = Rnd.Range(MIN_ACTIVATION_TIMEOUT, Mathf.Max(5f, avg));
+			ActivationTimeout = Random.Range(MIN_ACTIVATION_TIMEOUT, Mathf.Max(5f, avg));
 		}
 		Log("Next activation in {0} seconds", Mathf.Ceil(ActivationTimeout));
 	}
@@ -273,71 +279,23 @@ public class SMBHModule : ModuleScript {
 		throw new System.Exception("Unable to cast base36 integer to char");
 	}
 
-#pragma warning disable 0414
-	private readonly string TwitchHelpMessage = @"!{0} hold, tick, release | !{0} tap, tick, tap [specify when to hold, release, tap, or wait for a timer tick in the correct order]";
-#pragma warning restore 0414
-
-	private enum TpActions
-	{
-		Hold,
-		Release,
-		Tick
-	}
-
-	private IEnumerator ProcessTwitchCommand(string command)
-	{
-		if (IsSolved)
-			yield break;
-
-		var actions = new List<TpActions>() { TpActions.Tick };
-		foreach (var piece in command.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(str => str.Trim().ToLowerInvariant()))
-		{
-			switch (piece)
-			{
-				case "hold":
-				case "down":
-					actions.Add(TpActions.Hold);
-					break;
-
-				case "release":
-				case "up":
-					actions.Add(TpActions.Release);
-					break;
-
-				case "tap":
-				case "click":
-					actions.Add(TpActions.Hold);
-					actions.Add(TpActions.Release);
-					break;
-
-				case "tick":
-				case "wait":
-					actions.Add(TpActions.Tick);
-					break;
-
-				default:
-					yield break;
-			}
+	private IEnumerator ProcessTwitchCommand(string command) {
+		if (IsSolved) yield break;
+		List<TpAction> actions = new List<TpAction>() { TpAction.Tick };
+		foreach (string piece in command.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(str => str.Trim().ToLowerInvariant())) {
+			if (piece == "hold" || piece == "down") actions.Add(TpAction.Hold);
+			else if (piece == "release" || piece == "up") actions.Add(TpAction.Release);
+			else if (piece == "tap" || piece == "click") actions.AddRange(new[] { TpAction.Hold, TpAction.Release });
+			else if (piece == "tick" || piece == "wait") actions.Add(TpAction.Tick);
+			else yield break;
 		}
-
 		yield return null;
-
-		foreach (var action in actions)
-		{
-			switch (action)
-			{
-				case TpActions.Hold:
-					EventHorizon.Selectable.OnInteract();
-					break;
-
-				case TpActions.Release:
-					EventHorizon.Selectable.OnInteractEnded();
-					break;
-
-				case TpActions.Tick:
-					var time = (int)BombInfo.GetTime();
-					yield return new WaitUntil(() => (int)BombInfo.GetTime() != time);
-					break;
+		foreach (TpAction action in actions) {
+			if (action == TpAction.Hold) EventHorizon.Selectable.OnInteract();
+			else if (action == TpAction.Release) EventHorizon.Selectable.OnInteractEnded();
+			else if (action == TpAction.Tick) {
+				int time = (int)BombInfo.GetTime();
+				yield return new WaitUntil(() => (int)BombInfo.GetTime() != time);
 			}
 		}
 	}
