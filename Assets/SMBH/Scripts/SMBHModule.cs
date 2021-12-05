@@ -282,10 +282,14 @@ public class SMBHModule : ModuleScript {
 	}
 
 	private IEnumerator ProcessTwitchCommand(string command) {
+		if (IsSolved || !IsActive) yield break;
+		if (State != ModuleState.ENABLED) {
+			yield return "sendtochaterror {0}, !{1}: accretion disk not present";
+			yield break;
+		}
 		command = command.Trim().ToLower();
-		if (IsSolved) yield break;
 		if (Regex.IsMatch(command, @"^[th\-r]+$")) command = command.ToArray().Join(";");
-		List<TpAction> actions = new List<TpAction>() { TpAction.Tick };
+		List<TpAction> actions = new List<TpAction>();
 		foreach (string piece in command.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(str => str.Trim().ToLowerInvariant())) {
 			if (piece == "hold" || piece == "down" || piece == "h") actions.Add(TpAction.Hold);
 			else if (piece == "release" || piece == "up" || piece == "r") actions.Add(TpAction.Release);
@@ -293,6 +297,19 @@ public class SMBHModule : ModuleScript {
 			else if (piece == "tick" || piece == "wait" || piece == "-") actions.Add(TpAction.Tick);
 			else yield break;
 		}
+		if (actions.All(a => a == TpAction.Tick)) {
+			yield return "sendtochaterror {0}, !{1}: instruction should contain actions";
+			yield break;
+		}
+		while (actions.First() == TpAction.Tick) actions.RemoveAt(0);
+		while (actions.Last() == TpAction.Tick) actions.RemoveAt(actions.Count - 1);
+		string errorMessage = validateTpActions(actions.ToArray());
+		if (errorMessage != null) {
+			yield return "sendtochaterror {0}, !{1}: " + errorMessage;
+			yield break;
+		}
+		actions.Insert(0, TpAction.Tick);
+		actions.AddRange(new[] { TpAction.Tick, TpAction.Tick });
 		yield return null;
 		foreach (TpAction action in actions) {
 			if (action == TpAction.Hold) EventHorizon.Selectable.OnInteract();
@@ -302,5 +319,29 @@ public class SMBHModule : ModuleScript {
 				yield return new WaitUntil(() => (int)BombInfo.GetTime() != time);
 			}
 		}
+	}
+
+	private string validateTpActions(TpAction[] tpActions) {
+		if (tpActions.Count(a => a == TpAction.Tick) > 3) return "instruction too long";
+		int subactionsCount = 0;
+		bool held = false;
+		for (int i = 0; i < tpActions.Length; i++) {
+			TpAction action = tpActions[i];
+			if (action == TpAction.Tick) {
+				subactionsCount = 0;
+				if (!held && tpActions[i + 1] == TpAction.Tick) return "instruction cannot contain two consecutive ticks while not held";
+				continue;
+			}
+			subactionsCount += 1;
+			if (subactionsCount >= 4) return "too many commands between two ticks";
+			if (action == TpAction.Hold) {
+				if (held) return "unable to hold while held";
+				held = true;
+			} else {
+				if (!held) return "unable to release while not held";
+				held = false;
+			}
+		}
+		return null;
 	}
 }
